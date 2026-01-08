@@ -1,22 +1,31 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<meta charset="UTF-8" />
-<title>HelloJSON</title>
-<style>
-textarea { width: 45%; height: 500px; }
-button { margin: 5px; }
-</style>
+    <meta charset="UTF-8" />
+    <title>HelloJSON</title>
+    <style>
+        textarea {
+            width: 45%;
+            height: 500px;
+        }
+
+        button {
+            margin: 5px;
+        }
+    </style>
 </head>
+
 <body>
-<h2>HelloJSON</h2>
+    <h2>HelloJSON</h2>
 
-<textarea id="input"></textarea>
-<textarea id="output"></textarea><br/>
+    <textarea id="input"></textarea>
+    <textarea id="output"></textarea><br />
 
-<button onclick="format()">格式化</button>
-<button onclick="minify()">压缩</button>
+    <button onclick="format()">格式化</button>
+    <button onclick="minify()">压缩</button>
 
-<script src="renderer.js"></script>
+    <script src="renderer.js"></script>
 </body>
+
 </html>
