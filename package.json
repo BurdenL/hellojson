@@ -1,6 +1,6 @@
 {
   "name": "hellojson",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "hello json",
   "main": "./app/main.js",
   "scripts": {
