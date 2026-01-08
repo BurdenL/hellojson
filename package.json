@@ -1,16 +1,92 @@
 {
   "name": "hellojson",
   "version": "1.0.0",
-  "description": "",
-  "main": "main.js",
+  "description": "hello json",
+  "main": "./app/main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "build": "cross-env ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/  electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
   },
+  "build": {
+    "productName": "HelloJSON",
+    "appId": "com.jerry.hello_json",
+    "asar": true,
+    "files": [
+      "app/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "./app/resource/images/logo.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "sign": false
+    },
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "./app/resource/images/logo.icns",
+      "hardenedRuntime": false,
+      "entitlements": null,
+      "entitlementsInherit": null,
+      "gatekeeperAssess": false
+    },
+    "linux": {
+      "category": "Utility",
+      "maintainer": "Burden Leo",
+      "icon": "./app/resource/images/logo.png",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "rpm",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "author": "Burden Leo",
+  "license": "MIT",
   "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
-    "electron": "^39.2.7"
+    "cross-env": "^10.1.0",
+    "electron": "^39.2.7",
+    "electron-builder": "^25.1.8"
   }
 }
