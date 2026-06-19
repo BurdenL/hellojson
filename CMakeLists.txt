@@ -75,4 +75,25 @@ install(TARGETS hellojson
 
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(hellojson)
+
+    # ── Deploy Qt DLLs to output dir for running without PATH setup ─────
+    if(WIN32)
+        find_program(WINDEPLOYQT windeployqt
+            HINTS "$ENV{QTDIR}/bin" "${CMAKE_PREFIX_PATH}/bin"
+        )
+        if(WINDEPLOYQT)
+            add_custom_command(TARGET hellojson POST_BUILD
+                COMMAND "${WINDEPLOYQT}"
+                    --no-translations
+                    --no-compiler-runtime
+                    --no-opengl-sw
+                    "$<TARGET_FILE:hellojson>"
+                COMMENT "Deploying Qt DLLs to output directory..."
+            )
+        else()
+            message(WARNING
+                "windeployqt not found — Qt DLLs will not be deployed. "
+                "Add Qt bin directory to PATH before running.")
+        endif()
+    endif()
 endif()
