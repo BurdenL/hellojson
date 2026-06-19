@@ -1,0 +1,24 @@
+# Auto-detect text files; normalize to LF in repository, CRLF in working tree on Windows
+* text=auto
+
+# Source code
+*.cpp    text
+*.h      text
+*.ts     text
+*.ui     text diff=xml
+*.txt    text
+*.md     text
+*.json   text
+*.cmake  text
+*.txt    text
+
+# Build system
+CMakeLists.txt    text
+CMakePresets.json text
+*.cmake           text
+
+# Images (binary)
+*.png    binary
+*.gif    binary
+*.ico    binary
+*.jpg    binary

@@ -1,0 +1,42 @@
+# Third-Party Notices
+
+## Qt Framework
+
+This application uses the **Qt framework** (https://www.qt.io),
+which is Copyright (C) The Qt Company Ltd.
+
+Qt is available under multiple licenses:
+- **LGPL v3** — GNU Lesser General Public License version 3
+- **GPL v2 / GPL v3** — GNU General Public License
+- **Commercial License** — from The Qt Company
+
+This application links to Qt **dynamically** (via shared libraries / DLLs),
+which satisfies the LGPL v3 requirements for closed-source or
+differently-licensed applications.
+
+### Your rights under LGPL v3
+
+As an end user, you are entitled to:
+1. Receive the Qt source code (see https://download.qt.io)
+2. Replace the Qt libraries (.dll / .so) with your own builds
+3. Reverse-engineer the Qt libraries for debugging purposes
+
+### Qt license files
+
+When packaging with `windeployqt`, Qt's license files are
+automatically included in the output directory.
+
+---
+
+## MinGW-w64 / GCC
+
+This application may be compiled with the MinGW-w64 toolchain
+(https://www.mingw-w64.org), distributed under various open-source
+licenses including GPL with linking exception.
+
+---
+
+## Full license texts
+
+- Qt LGPL v3: https://www.gnu.org/licenses/lgpl-3.0.html
+- MIT License (this application): See `LICENSE` file

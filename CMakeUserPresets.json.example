@@ -1,0 +1,56 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "hidden": true,
+      "name": "Qt-Default",
+      "inherits": "6.x.x_yourkit",
+      "vendor": {
+        "qt-project.org/Default": {
+          "checksum": "YOUR_CHECKSUM"
+        }
+      }
+    },
+    {
+      "hidden": true,
+      "name": "6.x.x_yourkit",
+      "inherits": "Qt",
+      "environment": {
+        "QTDIR": "D:/path/to/Qt/6.x.x/msvc2022_64"
+      },
+      "architecture": {
+        "strategy": "external",
+        "value": "x64"
+      },
+      "generator": "Ninja",
+      "vendor": {
+        "qt-project.org/Version": {
+          "checksum": "YOUR_CHECKSUM"
+        }
+      }
+    },
+    {
+      "hidden": false,
+      "name": "Qt-Debug",
+      "inherits": "Qt-Default",
+      "binaryDir": "${sourceDir}/out/build/debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "hidden": false,
+      "name": "Qt-Release",
+      "inherits": "Qt-Default",
+      "binaryDir": "${sourceDir}/out/build/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+  "vendor": {
+    "qt-project.org/Presets": {
+      "checksum": "YOUR_CHECKSUM"
+    }
+  }
+}
