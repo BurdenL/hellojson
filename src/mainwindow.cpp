@@ -8,6 +8,7 @@
 #include <QDir>
 #include <QTextBrowser>
 #include <QFrame>
+#include <QPushButton>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -46,6 +47,15 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->clearButton, &QPushButton::clicked,
             this, &MainWindow::onClearClicked);
 
+    // Toggle tree button
+    m_toggleTreeBtn = new QPushButton(tr("Tree ▶"), this);
+    m_toggleTreeBtn->setMinimumHeight(32);
+    m_toggleTreeBtn->setToolTip(tr("Show / hide JSON tree view"));
+    m_toggleTreeBtn->setEnabled(false);
+    connect(m_toggleTreeBtn, &QPushButton::clicked,
+            this, &MainWindow::onToggleTree);
+    ui->buttonLayout->addWidget(m_toggleTreeBtn);
+
     // ── Menu actions ──────────────────────────────────────────────────────
     connect(ui->actionFormat, &QAction::triggered,
             this, &MainWindow::onFormatClicked);
@@ -71,6 +81,16 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::onExpandAll);
     connect(ui->actionCollapseAll, &QAction::triggered,
             this, &MainWindow::onCollapseAll);
+
+    // Toggle Tree — add action to View menu programmatically
+    QAction *toggleTreeAction = new QAction(tr("&Tree View"), this);
+    toggleTreeAction->setShortcut(QKeySequence(tr("Ctrl+Shift+T")));
+    toggleTreeAction->setCheckable(true);
+    connect(toggleTreeAction, &QAction::triggered,
+            this, &MainWindow::onToggleTree);
+    ui->menuView->addSeparator();
+    ui->menuView->addAction(toggleTreeAction);
+
     connect(ui->actionAbout, &QAction::triggered,
             this, &MainWindow::onAbout);
     connect(ui->actionOpenSource, &QAction::triggered,
@@ -181,6 +201,8 @@ JsonTab *MainWindow::createTab(const QString &title)
                   : ui->tabWidget->insertTab(plusIdx, tab, title);
     ui->tabWidget->setCurrentIndex(idx);
     connect(tab, &JsonTab::contentChanged, this, &MainWindow::updateTabStates);
+    connect(tab, &JsonTab::treeVisibilityChanged,
+            this, &MainWindow::onTreeVisibilityChanged);
     return tab;
 }
 
@@ -211,6 +233,10 @@ void MainWindow::onCurrentTabChanged(int index)
         return;
     }
     updateTabStates();
+    // Sync toggle-tree button text with current tab's tree state
+    JsonTab *tab = currentTab();
+    if (tab)
+        onTreeVisibilityChanged(tab->isTreeVisible());
 }
 
 void MainWindow::updateTabStates()
@@ -223,6 +249,9 @@ void MainWindow::updateTabStates()
     ui->actionFormat->setEnabled(hasTab);
     ui->actionCompress->setEnabled(hasTab);
     ui->actionClear->setEnabled(hasTab);
+
+    if (m_toggleTreeBtn)
+        m_toggleTreeBtn->setEnabled(hasTab);
 }
 
 void MainWindow::onCloseTab()
@@ -265,6 +294,28 @@ void MainWindow::onCollapseAll()
     if (tab) tab->collapseAll();
 }
 
+void MainWindow::onToggleTree()
+{
+    JsonTab *tab = currentTab();
+    if (!tab) return;
+    tab->setTreeVisible(!tab->isTreeVisible());
+}
+
+void MainWindow::onTreeVisibilityChanged(bool visible)
+{
+    if (m_toggleTreeBtn) {
+        m_toggleTreeBtn->setText(visible ? tr("Tree ▼") : tr("Tree ▶"));
+    }
+    // Also update the menu action check state
+    QList<QAction *> actions = ui->menuView->actions();
+    for (QAction *act : actions) {
+        if (act->text().contains(tr("Tree View"))) {
+            act->setChecked(visible);
+            break;
+        }
+    }
+}
+
 void MainWindow::onAbout()
 {
     QMessageBox::about(this, tr("About Hello JSON"),
@@ -275,7 +326,11 @@ void MainWindow::onAbout()
            "&bull; Tree structure viewer<br>"
            "&bull; Multi-tab editing<br>"
            "&bull; Text search<br>"
-           "&bull; Copy value / path</p>"));
+           "&bull; Copy value / path</p>"
+           "<p style='margin-top:12pt'>"
+           "<b>Developer:</b> BurdenL<br>"
+           "<b>GitHub:</b> <a href='https://github.com/BurdenL/hellojson'>"
+           "github.com/BurdenL/hellojson</a></p>"));
 }
 
 void MainWindow::onOpenSource()
@@ -297,7 +352,8 @@ void MainWindow::onOpenSource()
            "<p><b>GCC / MinGW-w64</b><br>"
            "C++ compiler toolchain</p>"
            "<p>Full source code of this application is available at:<br>"
-           "<a href='https://github.com'>github.com</a></p>"));
+           "<a href='https://github.com/burden/hellojson'>"
+           "github.com/burden/hellojson</a></p>"));
     browser->setReadOnly(true);
     layout->addWidget(browser);
 

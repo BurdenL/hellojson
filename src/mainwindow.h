@@ -6,6 +6,7 @@
 class JsonTab;
 class QLineEdit;
 class QLabel;
+class QPushButton;
 class QTranslator;
 
 QT_BEGIN_NAMESPACE
@@ -36,6 +37,8 @@ private slots:
     void onPrevTab();
     void onExpandAll();
     void onCollapseAll();
+    void onToggleTree();
+    void onTreeVisibilityChanged(bool visible);
     void onAbout();
     void onOpenSource();
     void onLicense();
@@ -66,6 +69,9 @@ private:
     Ui::MainWindow *ui;
     QTranslator *m_translator = nullptr;
     QString m_currentLocale;
+
+    // Toggle tree button
+    QPushButton *m_toggleTreeBtn = nullptr;
 
     // Find bar widgets
     QWidget     *m_findBar = nullptr;

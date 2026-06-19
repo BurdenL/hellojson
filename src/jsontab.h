@@ -10,6 +10,7 @@ class QPlainTextEdit;
 class QTreeWidget;
 class QTreeWidgetItem;
 class QSplitter;
+class QPushButton;
 
 class JsonTab : public QWidget
 {
@@ -26,6 +27,10 @@ public:
 
     bool hasDocument() const { return m_hasValidDocument; }
 
+    // Tree visibility
+    void setTreeVisible(bool visible);
+    bool isTreeVisible() const;
+
     // Search
     void findText(const QString &text);
     bool findNext(const QString &text);
@@ -37,11 +42,15 @@ public:
     void expandAll();
     void collapseAll();
 
+protected:
+    void resizeEvent(QResizeEvent *event) override;
+
 private slots:
     void onTreeContextMenu(const QPoint &pos);
 
 signals:
     void contentChanged();
+    void treeVisibilityChanged(bool visible);
 
 private:
     void populateJsonTree(const QJsonValue &value,
@@ -51,6 +60,8 @@ private:
 
     QPlainTextEdit     *m_inputEdit;
     QTreeWidget        *m_treeWidget;
+    QWidget            *m_treeContainer;
+    QPushButton        *m_showTreeBtn;
     QSplitter          *m_splitter;
     QJsonDocument       m_lastDocument;
     bool                m_hasValidDocument = false;

@@ -3,12 +3,17 @@
 
 #include <QApplication>
 #include <QClipboard>
+#include <QFrame>
+#include <QHBoxLayout>
 #include <QHeaderView>
 #include <QJsonArray>
+#include <QLabel>
 #include <QMenu>
 #include <QJsonObject>
 #include <QJsonParseError>
 #include <QPlainTextEdit>
+#include <QPushButton>
+#include <QResizeEvent>
 #include <QSplitter>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
@@ -29,13 +34,44 @@ JsonTab::JsonTab(QWidget *parent)
 
     m_splitter = new QSplitter(Qt::Horizontal, this);
 
+    // ── Left: text editor ───────────────────────────────────────────────
     m_inputEdit = new QPlainTextEdit(this);
     m_inputEdit->setPlaceholderText(trMain("Paste your JSON here..."));
     m_inputEdit->setTabStopDistance(20);
     m_inputEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
     new JsonHighlighter(m_inputEdit->document());
 
-    m_treeWidget = new QTreeWidget(this);
+    // ── Right: tree view inside a container with a hide button ──────────
+    m_treeContainer = new QWidget(this);
+    auto *treeLayout = new QVBoxLayout(m_treeContainer);
+    treeLayout->setContentsMargins(0, 0, 0, 0);
+    treeLayout->setSpacing(4);
+
+    // Header row: "JSON Tree" label + hide (×) button
+    auto *headerRow = new QHBoxLayout();
+    headerRow->setContentsMargins(0, 0, 0, 0);
+    auto *treeLabel = new QLabel(trMain("JSON Tree"), m_treeContainer);
+    QFont f = treeLabel->font();
+    f.setBold(true);
+    treeLabel->setFont(f);
+    auto *hideBtn = new QPushButton(trMain("×"), m_treeContainer);  // ×
+    hideBtn->setFixedSize(22, 22);
+    hideBtn->setFlat(true);
+    hideBtn->setToolTip(trMain("Hide tree view"));
+    connect(hideBtn, &QPushButton::clicked, this,
+            [this] { setTreeVisible(false); });
+    headerRow->addWidget(treeLabel);
+    headerRow->addStretch();
+    headerRow->addWidget(hideBtn);
+    treeLayout->addLayout(headerRow);
+
+    // Separator line
+    auto *sep = new QFrame(m_treeContainer);
+    sep->setFrameShape(QFrame::HLine);
+    sep->setFrameShadow(QFrame::Sunken);
+    treeLayout->addWidget(sep);
+
+    m_treeWidget = new QTreeWidget(m_treeContainer);
     m_treeWidget->setAlternatingRowColors(true);
     m_treeWidget->setRootIsDecorated(true);
     m_treeWidget->setHeaderLabels({
@@ -49,12 +85,27 @@ JsonTab::JsonTab(QWidget *parent)
     m_treeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_treeWidget, &QTreeWidget::customContextMenuRequested,
             this, &JsonTab::onTreeContextMenu);
+    treeLayout->addWidget(m_treeWidget);
+
+    // ── Show-tree button (overlay on text editor, visible when tree hidden)
+    m_showTreeBtn = new QPushButton(trMain("◀"), m_inputEdit);
+    m_showTreeBtn->setFixedSize(22, 44);
+    m_showTreeBtn->setFlat(true);
+    m_showTreeBtn->setToolTip(trMain("Show JSON tree"));
+    m_showTreeBtn->setVisible(false);
+    m_showTreeBtn->setStyleSheet(
+        "QPushButton { background: rgba(200,200,200,100); border: 1px solid #aaa; "
+        "border-top-right-radius: 0; border-bottom-right-radius: 0; }");
+    connect(m_showTreeBtn, &QPushButton::clicked, this,
+            [this] { setTreeVisible(true); });
 
     m_splitter->addWidget(m_inputEdit);
-    m_splitter->addWidget(m_treeWidget);
-    m_splitter->setSizes({500, 500});
+    m_splitter->addWidget(m_treeContainer);
 
     layout->addWidget(m_splitter);
+
+    // ── Start with tree hidden ──────────────────────────────────────────
+    setTreeVisible(false);
 
     connect(m_inputEdit, &QPlainTextEdit::textChanged,
             this, &JsonTab::contentChanged);
@@ -76,6 +127,47 @@ void JsonTab::clear()
     m_treeWidget->clear();
     m_hasValidDocument = false;
     m_lastDocument = QJsonDocument();
+    setTreeVisible(false);
+}
+
+// ── Tree visibility ──────────────────────────────────────────────────────
+
+void JsonTab::setTreeVisible(bool visible)
+{
+    m_treeContainer->setVisible(visible);
+    m_showTreeBtn->setVisible(!visible);
+
+    // Position the ◀ overlay at the right edge of the text editor
+    if (!visible && m_inputEdit) {
+        m_showTreeBtn->move(m_inputEdit->width() - m_showTreeBtn->width(),
+                            m_inputEdit->height() / 2 - m_showTreeBtn->height() / 2);
+        m_showTreeBtn->raise();
+    }
+
+    if (visible) {
+        m_splitter->setSizes({m_splitter->width() * 3 / 5,
+                              m_splitter->width() * 2 / 5});
+        if (m_treeWidget->topLevelItemCount() > 0)
+            m_treeWidget->setFocus();
+    }
+    // When hidden: splitter has only one visible widget → editor fills 100%
+
+    emit treeVisibilityChanged(visible);
+}
+
+bool JsonTab::isTreeVisible() const
+{
+    return m_treeContainer->isVisible();
+}
+
+void JsonTab::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    // Keep the ◀ overlay button at the top-right edge of the text editor
+    if (m_showTreeBtn && m_inputEdit) {
+        m_showTreeBtn->move(m_inputEdit->width() - m_showTreeBtn->width(),
+                            m_inputEdit->height() / 2 - m_showTreeBtn->height() / 2);
+    }
 }
 
 // ── Recursive tree population ────────────────────────────────────────────
@@ -178,6 +270,10 @@ void JsonTab::formatJson(bool compressed)
     m_inputEdit->blockSignals(false);
 
     rebuildTree();
+
+    // Auto-show the tree after successful format
+    if (!isTreeVisible())
+        setTreeVisible(true);
 }
 
 // ── Tree helpers ─────────────────────────────────────────────────────────
