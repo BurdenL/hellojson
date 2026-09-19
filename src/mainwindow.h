@@ -8,6 +8,7 @@ class QLineEdit;
 class QLabel;
 class QPushButton;
 class QTranslator;
+class QComboBox;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -65,6 +66,11 @@ private:
     void updateTabStates();
     void showFindBar(bool visible);
     void performSearch();
+    void setupHiJsonActions();
+    void refreshDynamicTexts();
+    void updateSearchCount();
+    void showUnicodeConverter();
+    void openFileWithMode(bool largeFile);
 
     Ui::MainWindow *ui;
     QTranslator *m_translator = nullptr;
@@ -76,6 +82,7 @@ private:
     // Find bar widgets
     QWidget     *m_findBar = nullptr;
     QLineEdit   *m_findEdit = nullptr;
+    QComboBox   *m_findMode = nullptr;
     QLabel      *m_findCountLabel = nullptr;
     QString      m_lastSearchText;
 };

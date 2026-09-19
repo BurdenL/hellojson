@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include "jsontab.h"
+#include "jsontreemodel.h"
 
 #include <QActionGroup>
 #include <QApplication>
@@ -24,12 +25,19 @@
 #include <QMessageBox>
 #include <QTextStream>
 #include <QTranslator>
+#include <QComboBox>
+#include <QInputDialog>
+#include <QPlainTextEdit>
+#include <QToolBar>
+#include <QMenu>
+#include <QSignalBlocker>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    setupHiJsonActions();
 
     // ── Language actions: mutually exclusive group ────────────────────────
     QActionGroup *langGroup = new QActionGroup(this);
@@ -84,6 +92,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Toggle Tree — add action to View menu programmatically
     QAction *toggleTreeAction = new QAction(tr("&Tree View"), this);
+    toggleTreeAction->setObjectName("toggleTreeAction");
+    toggleTreeAction->setProperty("translationSource", "&Tree View");
     toggleTreeAction->setShortcut(QKeySequence(tr("Ctrl+Shift+T")));
     toggleTreeAction->setCheckable(true);
     connect(toggleTreeAction, &QAction::triggered,
@@ -106,16 +116,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->tabWidget, &QTabWidget::currentChanged,
             this, &MainWindow::onCurrentTabChanged);
 
-    // "+" tab: clicking it creates a new tab before itself
-    ui->tabWidget->tabBar()->setStyleSheet(
-        "QTabBar::tab:last { max-width: 28px; font-weight: bold; }");
-    connect(ui->tabWidget, &QTabWidget::tabBarClicked,
-            this, [this](int index) {
-        if (index == ui->tabWidget->count() - 1) {
-            onNewTab();
-        }
-    });
-
     // ── Find bar (hidden by default) ─────────────────────────────────────
     m_findBar = new QWidget(this);
     m_findBar->setVisible(false);
@@ -124,6 +124,14 @@ MainWindow::MainWindow(QWidget *parent)
     findLayout->setSpacing(4);
 
     m_findEdit = new QLineEdit(m_findBar);
+    m_findEdit->setObjectName("searchText");
+    m_findMode = new QComboBox(m_findBar);
+    m_findMode->setObjectName("searchMode");
+    m_findMode->addItems({tr("Text Search"), tr("Node Search")});
+    connect(m_findMode, qOverload<int>(&QComboBox::currentIndexChanged), this, [this] {
+        if (auto *tab = currentTab()) tab->setNodeSearch(m_findMode->currentIndex() == 1);
+        performSearch();
+    });
     m_findEdit->setPlaceholderText(tr("Find in JSON..."));
     m_findEdit->setClearButtonEnabled(true);
     m_findEdit->setMinimumWidth(200);
@@ -133,10 +141,12 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::onFindNext);
 
     auto *prevBtn = new QPushButton(tr("◂ Prev"), m_findBar);
+    prevBtn->setProperty("translationSource", "◂ Prev");
     prevBtn->setFixedWidth(60);
     connect(prevBtn, &QPushButton::clicked, this, &MainWindow::onFindPrev);
 
     auto *nextBtn = new QPushButton(tr("Next ▸"), m_findBar);
+    nextBtn->setProperty("translationSource", "Next ▸");
     nextBtn->setFixedWidth(60);
     connect(nextBtn, &QPushButton::clicked, this, &MainWindow::onFindNext);
 
@@ -148,6 +158,7 @@ MainWindow::MainWindow(QWidget *parent)
     closeBtn->setFlat(true);
     connect(closeBtn, &QPushButton::clicked, this, &MainWindow::onFindClose);
 
+    findLayout->addWidget(m_findMode);
     findLayout->addWidget(m_findEdit);
     findLayout->addWidget(prevBtn);
     findLayout->addWidget(nextBtn);
@@ -161,7 +172,9 @@ MainWindow::MainWindow(QWidget *parent)
     centralLayout->insertWidget(tabIdx, m_findBar);
 
     // Escape closes the find bar
-    installEventFilter(this);
+    m_findEdit->installEventFilter(this);
+    auto *escapeSearch = new QShortcut(QKeySequence(Qt::Key_Escape), this);
+    connect(escapeSearch, &QShortcut::activated, this, &MainWindow::onFindClose);
 
     // ── Create the initial tab ────────────────────────────────────────────
     createTab("Untitled");
@@ -182,6 +195,121 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::setupHiJsonActions()
+{
+    auto *largeOpen = ui->menuFile->addAction(tr("Open in Large-file Mode..."));
+    largeOpen->setProperty("translationSource", "Open in Large-file Mode...");
+    largeOpen->setObjectName("openLargeFile");
+    largeOpen->setShortcut(QKeySequence("Ctrl+Shift+O"));
+    connect(largeOpen, &QAction::triggered, this, [this] { openFileWithMode(true); });
+    auto *toolsMenu = ui->menubar->addMenu(tr("Tools"));
+    toolsMenu->setProperty("translationSource", "Tools");
+    auto *toolbar = addToolBar(tr("JSON Tools"));
+    toolbar->setObjectName("jsonTools");
+    auto add = [this, toolsMenu](const char *source, const QKeySequence &shortcut,
+                                auto callback) {
+        auto *action = toolsMenu->addAction(tr(source));
+        action->setProperty("translationSource", source);
+        action->setProperty("requiresEditable", QByteArray(source) == "Paste" ||
+                            QByteArray(source) == "Node Search" ||
+                            QByteArray(source) == "Switch Layout" ||
+                            QByteArray(source) == "Remove Newlines" ||
+                            QByteArray(source) == "Remove Backslashes");
+        action->setShortcut(shortcut);
+        connect(action, &QAction::triggered, this, callback);
+        return action;
+    };
+    toolbar->addAction(add("Paste", QKeySequence(), [this] {
+        if (auto *tab = currentTab()) tab->paste();
+    }));
+    toolbar->addAction(add("Node Search", QKeySequence("Ctrl+Shift+N"), [this] {
+        m_findMode->setCurrentIndex(1);
+        showFindBar(true);
+    }));
+    toolbar->addAction(add("Switch Layout", QKeySequence("Ctrl+Alt+L"), [this] {
+        if (auto *tab = currentTab()) tab->toggleLayout();
+    }));
+    add("Remove Newlines", QKeySequence(), [this] {
+        if (auto *tab = currentTab()) tab->removeNewlines();
+    });
+    add("Remove Backslashes", QKeySequence(), [this] {
+        if (auto *tab = currentTab()) tab->removeBackslashes();
+    });
+    add("Rename Tab", QKeySequence("F2"), [this] {
+        if (!currentTab()) return;
+        int index = ui->tabWidget->currentIndex();
+        bool ok;
+        QString title = QInputDialog::getText(this, tr("Rename Tab"), tr("Name"),
+                                            QLineEdit::Normal, ui->tabWidget->tabText(index), &ok);
+        if (ok && !title.trimmed().isEmpty()) ui->tabWidget->setTabText(index, title);
+    });
+    add("Rename Window", QKeySequence(), [this] {
+        bool ok;
+        QString title = QInputDialog::getText(this, tr("Rename Window"), tr("Name"),
+                                            QLineEdit::Normal, windowTitle(), &ok);
+        if (ok && !title.trimmed().isEmpty()) setWindowTitle(title);
+    });
+    add("Unicode / Escape Conversion", QKeySequence("Ctrl+Alt+U"),
+        [this] { showUnicodeConverter(); });
+}
+
+void MainWindow::refreshDynamicTexts()
+{
+    for (auto *action : findChildren<QAction *>()) {
+        QByteArray source = action->property("translationSource").toByteArray();
+        if (!source.isEmpty()) action->setText(tr(source.constData()));
+    }
+    for (auto *menu : findChildren<QMenu *>()) {
+        QByteArray source = menu->property("translationSource").toByteArray();
+        if (!source.isEmpty()) menu->setTitle(tr(source.constData()));
+    }
+    for (auto *button : findChildren<QPushButton *>()) {
+        QByteArray source = button->property("translationSource").toByteArray();
+        if (!source.isEmpty()) button->setText(tr(source.constData()));
+    }
+    m_findMode->setItemText(0, tr("Text Search"));
+    m_findMode->setItemText(1, tr("Node Search"));
+    m_findEdit->setPlaceholderText(tr("Find in JSON..."));
+    m_toggleTreeBtn->setToolTip(tr("Show / hide JSON tree view"));
+    if (auto *tab = currentTab()) onTreeVisibilityChanged(tab->isTreeVisible());
+    updateSearchCount();
+}
+
+void MainWindow::showUnicodeConverter()
+{
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("Unicode / Escape Conversion"));
+    dialog.resize(650, 450);
+    auto *layout = new QVBoxLayout(&dialog);
+    auto *source = new QPlainTextEdit(&dialog);
+    source->setPlaceholderText(tr("Input escaped text"));
+    auto *output = new QPlainTextEdit(&dialog);
+    output->setReadOnly(true);
+    auto *convert = new QPushButton(tr("Decode Escapes"), &dialog);
+    auto *encode = new QPushButton(tr("Encode Unicode"), &dialog);
+    auto *buttons = new QHBoxLayout;
+    buttons->addWidget(convert);
+    buttons->addWidget(encode);
+    layout->addWidget(source);
+    layout->addLayout(buttons);
+    layout->addWidget(output);
+    connect(convert, &QPushButton::clicked, &dialog, [source, output] {
+        output->setPlainText(JsonTreeModel::unescape(source->toPlainText()));
+    });
+    connect(encode, &QPushButton::clicked, &dialog, [source, output] {
+        QString encoded;
+        for (QChar c : source->toPlainText()) {
+            if (c.unicode() > 0x7f) encoded += QStringLiteral("\\u%1").arg(uint(c.unicode()), 4, 16, QChar('0'));
+            else {
+                QString quoted = JsonTreeModel::quote(QString(c));
+                encoded += quoted.mid(1, quoted.size() - 2);
+            }
+        }
+        output->setPlainText(encoded);
+    });
+    dialog.exec();
+}
+
 // ── Tab management ───────────────────────────────────────────────────────
 
 JsonTab *MainWindow::currentTab() const
@@ -193,16 +321,16 @@ JsonTab *MainWindow::currentTab() const
 JsonTab *MainWindow::createTab(const QString &title)
 {
     auto *tab = new JsonTab(this);
-    // Insert after the current tab, before the "+" tab
+    // The add button lives outside the movable tabs.
     int cur = ui->tabWidget->currentIndex();
-    int plusIdx = ui->tabWidget->count() - 1;
-    int idx = (cur >= 0 && cur < plusIdx)
-                  ? ui->tabWidget->insertTab(cur + 1, tab, title)
-                  : ui->tabWidget->insertTab(plusIdx, tab, title);
+    int idx = ui->tabWidget->insertTab(cur + 1, tab, title);
     ui->tabWidget->setCurrentIndex(idx);
     connect(tab, &JsonTab::contentChanged, this, &MainWindow::updateTabStates);
     connect(tab, &JsonTab::treeVisibilityChanged,
             this, &MainWindow::onTreeVisibilityChanged);
+    connect(tab, &JsonTab::searchResultsChanged, this, [this, tab] {
+        if (tab == currentTab()) updateSearchCount();
+    });
     return tab;
 }
 
@@ -213,10 +341,8 @@ void MainWindow::onNewTab()
 
 void MainWindow::onTabCloseRequested(int index)
 {
-    // Don't close the "+" tab itself
-    if (index == ui->tabWidget->count() - 1) return;
-    // Keep at least one real tab (total = 1 real + "+" = 2 minimum)
-    if (ui->tabWidget->count() <= 2) return;
+    if (index < 0 || index >= ui->tabWidget->count()) return;
+    if (ui->tabWidget->count() <= 1) return;
 
     QWidget *w = ui->tabWidget->widget(index);
     ui->tabWidget->removeTab(index);
@@ -227,28 +353,33 @@ void MainWindow::onTabCloseRequested(int index)
 
 void MainWindow::onCurrentTabChanged(int index)
 {
-    // If "+" tab selected, switch back to last real tab
-    if (index == ui->tabWidget->count() - 1 && index > 0) {
-        ui->tabWidget->setCurrentIndex(index - 1);
-        return;
-    }
+    Q_UNUSED(index);
     updateTabStates();
     // Sync toggle-tree button text with current tab's tree state
     JsonTab *tab = currentTab();
     if (tab)
         onTreeVisibilityChanged(tab->isTreeVisible());
+    if (m_findBar && m_findBar->isVisible()) performSearch();
 }
 
 void MainWindow::updateTabStates()
 {
     JsonTab *tab = currentTab();
-    bool hasTab = (tab != nullptr);
+    bool hasTab = tab && !tab->isLargeFile();
     ui->formatButton->setEnabled(hasTab);
     ui->compressButton->setEnabled(hasTab);
     ui->clearButton->setEnabled(hasTab);
     ui->actionFormat->setEnabled(hasTab);
     ui->actionCompress->setEnabled(hasTab);
     ui->actionClear->setEnabled(hasTab);
+    ui->actionSave->setEnabled(hasTab);
+    ui->actionFind->setEnabled(hasTab);
+    ui->actionExpandAll->setEnabled(hasTab);
+    ui->actionCollapseAll->setEnabled(hasTab);
+    if (auto *action = findChild<QAction *>("toggleTreeAction")) action->setEnabled(hasTab);
+    for (auto *action : findChildren<QAction *>())
+        if (action->property("requiresEditable").toBool()) action->setEnabled(hasTab);
+    if (m_findBar && !hasTab) showFindBar(false);
 
     if (m_toggleTreeBtn)
         m_toggleTreeBtn->setEnabled(hasTab);
@@ -257,16 +388,15 @@ void MainWindow::updateTabStates()
 void MainWindow::onCloseTab()
 {
     int idx = ui->tabWidget->currentIndex();
-    if (idx < 0 || idx == ui->tabWidget->count() - 1) return;  // "+" tab
-    if (ui->tabWidget->count() <= 2) return;  // keep 1 real tab
+    if (idx < 0 || ui->tabWidget->count() <= 1) return;
     onTabCloseRequested(idx);
 }
 
 void MainWindow::onNextTab()
 {
     int count = ui->tabWidget->count();
-    if (count <= 2) return;  // only 1 real tab + "+"
-    int lastReal = count - 2;
+    if (count <= 1) return;
+    int lastReal = count - 1;
     int cur = ui->tabWidget->currentIndex();
     int next = (cur >= lastReal) ? 0 : cur + 1;
     ui->tabWidget->setCurrentIndex(next);
@@ -275,8 +405,8 @@ void MainWindow::onNextTab()
 void MainWindow::onPrevTab()
 {
     int count = ui->tabWidget->count();
-    if (count <= 2) return;
-    int lastReal = count - 2;
+    if (count <= 1) return;
+    int lastReal = count - 1;
     int cur = ui->tabWidget->currentIndex();
     int prev = (cur <= 0) ? lastReal : cur - 1;
     ui->tabWidget->setCurrentIndex(prev);
@@ -307,13 +437,8 @@ void MainWindow::onTreeVisibilityChanged(bool visible)
         m_toggleTreeBtn->setText(visible ? tr("Tree ▼") : tr("Tree ▶"));
     }
     // Also update the menu action check state
-    QList<QAction *> actions = ui->menuView->actions();
-    for (QAction *act : actions) {
-        if (act->text().contains(tr("Tree View"))) {
-            act->setChecked(visible);
-            break;
-        }
-    }
+    if (auto *action = findChild<QAction *>("toggleTreeAction"))
+        action->setChecked(visible);
 }
 
 void MainWindow::onAbout()
@@ -400,20 +525,15 @@ void MainWindow::onLicense()
     dlg.exec();
 }
 
-// Ensure a "+" placeholder tab always exists at the end
+// A corner button cannot be dragged into the document tabs.
 void MainWindow::ensurePlusTab()
 {
-    int count = ui->tabWidget->count();
-    // Remove stale "+" tab(s) from the end
-    while (count > 0 && !qobject_cast<JsonTab *>(ui->tabWidget->widget(count - 1))) {
-        ui->tabWidget->removeTab(count - 1);
-        count--;
-    }
-    // Add a fresh "+" tab at the end
-    int idx = ui->tabWidget->addTab(new QWidget(this), "+");
-    // Hide close button on the "+" tab
-    ui->tabWidget->tabBar()->setTabButton(idx, QTabBar::RightSide, nullptr);
-    ui->tabWidget->tabBar()->setTabButton(idx, QTabBar::LeftSide, nullptr);
+    if (ui->tabWidget->cornerWidget()) return;
+    auto *button = new QPushButton("+", ui->tabWidget);
+    button->setFixedWidth(28);
+    button->setToolTip(tr("New Tab"));
+    connect(button, &QPushButton::clicked, this, &MainWindow::onNewTab);
+    ui->tabWidget->setCornerWidget(button);
 }
 
 // ── Button / Menu slots ──────────────────────────────────────────────────
@@ -421,7 +541,7 @@ void MainWindow::ensurePlusTab()
 void MainWindow::onFormatClicked()
 {
     JsonTab *tab = currentTab();
-    if (!tab) return;
+    if (!tab || tab->isLargeFile()) return;
 
     const QString input = tab->text().trimmed();
     if (input.isEmpty()) {
@@ -435,21 +555,14 @@ void MainWindow::onFormatClicked()
         ui->statusbar->showMessage(
             tr("JSON formatted successfully"), 3000);
     } else {
-        // formatJson returned without success — parse error
-        // Re-parse to get error details
-        QJsonParseError err;
-        QJsonDocument::fromJson(input.toUtf8(), &err);
-        ui->statusbar->showMessage(
-            tr("JSON Parse Error at offset %1: %2")
-                .arg(err.offset)
-                .arg(err.errorString()), 5000);
+        ui->statusbar->showMessage(tab->parseError(), 5000);
     }
 }
 
 void MainWindow::onCompressClicked()
 {
     JsonTab *tab = currentTab();
-    if (!tab) return;
+    if (!tab || tab->isLargeFile()) return;
 
     const QString input = tab->text().trimmed();
     if (input.isEmpty()) {
@@ -463,12 +576,7 @@ void MainWindow::onCompressClicked()
         ui->statusbar->showMessage(
             tr("JSON compressed successfully"), 3000);
     } else {
-        QJsonParseError err;
-        QJsonDocument::fromJson(input.toUtf8(), &err);
-        ui->statusbar->showMessage(
-            tr("JSON Parse Error at offset %1: %2")
-                .arg(err.offset)
-                .arg(err.errorString()), 5000);
+        ui->statusbar->showMessage(tab->parseError(), 5000);
     }
 }
 
@@ -482,6 +590,11 @@ void MainWindow::onClearClicked()
 
 void MainWindow::onOpenFile()
 {
+    openFileWithMode(false);
+}
+
+void MainWindow::openFileWithMode(bool largeFile)
+{
     const QString filePath = QFileDialog::getOpenFileName(
         this,
         tr("Open JSON File"),
@@ -491,27 +604,21 @@ void MainWindow::onOpenFile()
     if (filePath.isEmpty())
         return;
 
-    QFile file(filePath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QMessageBox::warning(this, tr("Error"),
-                             tr("Cannot open file:\n%1").arg(filePath));
-        return;
-    }
-
-    QTextStream stream(&file);
-    QString content = stream.readAll();
-    file.close();
-
-    // If current tab is empty and untouched, reuse it; else create new
+    // Never reuse a paged tab: its text() deliberately does not return a page.
     JsonTab *tab = currentTab();
-    if (tab && !tab->text().isEmpty()) {
+    if (!tab || tab->isLargeFile() || !tab->text().isEmpty()) {
         tab = createTab(QFileInfo(filePath).fileName());
     } else if (tab) {
         int idx = ui->tabWidget->currentIndex();
         ui->tabWidget->setTabText(idx, QFileInfo(filePath).fileName());
     }
 
-    tab->setText(content);
+    QString error;
+    if (!tab->openFile(filePath, largeFile ? JsonTab::OpenMode::LargeFile : JsonTab::OpenMode::Automatic, &error)) {
+        QMessageBox::warning(this, tr("Error"), error);
+        return;
+    }
+    updateTabStates();
     ui->statusbar->showMessage(
         tr("Loaded: %1").arg(filePath), 3000);
 }
@@ -519,7 +626,7 @@ void MainWindow::onOpenFile()
 void MainWindow::onSaveFile()
 {
     JsonTab *tab = currentTab();
-    if (!tab) return;
+    if (!tab || tab->isLargeFile()) return;
 
     const QString output = tab->text();
     if (output.isEmpty()) {
@@ -604,11 +711,9 @@ void MainWindow::switchLanguage(const QString &locale)
     // Refresh all tabs' tree labels in the new language
     for (int i = 0; i < ui->tabWidget->count(); ++i) {
         auto *tab = qobject_cast<JsonTab *>(ui->tabWidget->widget(i));
-        if (tab && tab->hasDocument()) {
-            // Re-format the JSON to rebuild tree with translated type labels
-            tab->formatJson(false);
-        }
+        if (tab) tab->refreshLanguage();
     }
+    refreshDynamicTexts();
 }
 
 void MainWindow::onLanguageChanged()
@@ -633,6 +738,11 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
     if (event->type() == QEvent::KeyPress) {
         auto *ke = static_cast<QKeyEvent *>(event);
+        if (obj == m_findEdit && (ke->key() == Qt::Key_Return || ke->key() == Qt::Key_Enter)
+            && ke->modifiers().testFlag(Qt::ShiftModifier)) {
+            onFindPrev();
+            return true;
+        }
         if (ke->key() == Qt::Key_Escape && m_findBar->isVisible()) {
             onFindClose();
             return true;
@@ -648,6 +758,7 @@ void MainWindow::onFindToggled()
 
 void MainWindow::showFindBar(bool visible)
 {
+    if (visible && currentTab() && currentTab()->isLargeFile()) return;
     m_findBar->setVisible(visible);
     if (visible) {
         m_findEdit->setFocus();
@@ -657,8 +768,9 @@ void MainWindow::showFindBar(bool visible)
             performSearch();
     } else {
         // Clear highlights in current tab
-        JsonTab *tab = currentTab();
-        if (tab) tab->clearFind();
+        for (int i = 0; i < ui->tabWidget->count(); ++i)
+            if (auto *tab = qobject_cast<JsonTab *>(ui->tabWidget->widget(i)))
+                tab->findText(QString());
         m_findCountLabel->clear();
     }
 }
@@ -683,14 +795,29 @@ void MainWindow::performSearch()
     if (!tab) return;
 
     const QString &text = m_findEdit->text();
+    tab->setNodeSearch(m_findMode->currentIndex() == 1);
     if (text.isEmpty()) {
-        tab->clearFind();
+        tab->findText(QString());
         m_findCountLabel->clear();
         return;
     }
 
     tab->findText(text);
+    updateSearchCount();
+}
 
+void MainWindow::updateSearchCount()
+{
+    JsonTab *tab = currentTab();
+    if (!tab || !m_findCountLabel) return;
+    if (!m_findBar->isVisible() || m_findEdit->text().isEmpty()) {
+        m_findCountLabel->clear();
+        return;
+    }
+    if (tab->isNodeSearch() && !tab->hasDocument()) {
+        m_findCountLabel->setText(tr("Format valid JSON first"));
+        return;
+    }
     int total = tab->matchCount();
     if (total > 0) {
         int cur = tab->currentMatchIndex() + 1;

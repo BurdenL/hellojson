@@ -387,5 +387,133 @@
         <source>[%1]</source>
         <translation>[%1]</translation>
     </message>
+    <message>
+        <source>Tools</source>
+        <translation>工具</translation>
+    </message>
+    <message>
+        <source>JSON Tools</source>
+        <translation>JSON 工具</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation>粘贴</translation>
+    </message>
+    <message>
+        <source>Text Search</source>
+        <translation>文本查找</translation>
+    </message>
+    <message>
+        <source>Node Search</source>
+        <translation>节点查找</translation>
+    </message>
+    <message>
+        <source>Switch Layout</source>
+        <translation>切换横向/纵向布局</translation>
+    </message>
+    <message>
+        <source>Remove Newlines</source>
+        <translation>清除换行符</translation>
+    </message>
+    <message>
+        <source>Remove Backslashes</source>
+        <translation>清除反斜杠</translation>
+    </message>
+    <message>
+        <source>Rename Tab</source>
+        <translation>重命名标签页</translation>
+    </message>
+    <message>
+        <source>Rename Window</source>
+        <translation>修改窗口标题</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>名称</translation>
+    </message>
+    <message>
+        <source>Unicode / Escape Conversion</source>
+        <translation>Unicode / 转义转换</translation>
+    </message>
+    <message>
+        <source>Input escaped text</source>
+        <translation>输入包含转义符的文本</translation>
+    </message>
+    <message>
+        <source>Decode Escapes</source>
+        <translation>解码转义</translation>
+    </message>
+    <message>
+        <source>Encode Unicode</source>
+        <translation>编码为 Unicode</translation>
+    </message>
+    <message>
+        <source>Copy Key</source>
+        <translation>复制键名</translation>
+    </message>
+    <message>
+        <source>Copy Key / Value</source>
+        <translation>复制键名键值</translation>
+    </message>
+    <message>
+        <source>Copy Node JSON</source>
+        <translation>复制节点 JSON</translation>
+    </message>
+    <message>
+        <source>Copy Similar Values</source>
+        <translation>复制同路径键值</translation>
+    </message>
+    <message>
+        <source>Copy MAP Entry</source>
+        <translation>复制 MAP 式内容</translation>
+    </message>
+    <message>
+        <source>Copy Formatted Node JSON</source>
+        <translation>复制格式化节点 JSON</translation>
+    </message>
+    <message>
+        <source>Locate in Text</source>
+        <translation>定位到文本</translation>
+    </message>
+    <message>
+        <source>Expand Subtree</source>
+        <translation>展开子树</translation>
+    </message>
+    <message>
+        <source>Collapse Subtree</source>
+        <translation>折叠子树</translation>
+    </message>
+    <message>
+        <source>Format valid JSON first</source>
+        <translation>请先输入有效的 JSON</translation>
+    </message>
+    <message>
+        <source>&amp;Tree View</source>
+        <translation>树视图(&amp;T)</translation>
+    </message>
+    <message>
+        <source>JSON Tree</source>
+        <translation>JSON 树</translation>
+    </message>
+    <message>
+        <source>Hide tree view</source>
+        <translation>隐藏树视图</translation>
+    </message>
+    <message>
+        <source>Show JSON tree</source>
+        <translation>显示 JSON 树</translation>
+    </message>
+    <message>
+        <source>Tree ▼</source>
+        <translation>树视图 ▼</translation>
+    </message>
+    <message>
+        <source>Tree ▶</source>
+        <translation>树视图 ▶</translation>
+    </message>
+    <message>
+        <source>Show / hide JSON tree view</source>
+        <translation>显示 / 隐藏 JSON 树</translation>
+    </message>
 </context>
 </TS>

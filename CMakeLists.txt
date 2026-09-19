@@ -21,6 +21,12 @@ set(PROJECT_SOURCES
         src/mainwindow.ui
         src/jsontab.cpp
         src/jsontab.h
+        src/jsonindex.cpp
+        src/jsonindex.h
+        src/jsontreemodel.cpp
+        src/jsontreemodel.h
+        src/jsondatasource.cpp src/jsondatasource.h
+        src/largefileview.cpp src/largefileview.h
         src/jsonhighlighter.cpp
         src/jsonhighlighter.h
 )
@@ -48,6 +54,41 @@ else()
     endif()
 
     qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
+endif()
+
+include(CTest)
+if(BUILD_TESTING)
+    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Test)
+    add_executable(hellojson_tests
+        tests/tst_json.cpp tests/tst_json.h
+        src/jsonindex.cpp src/jsonindex.h
+        src/jsontreemodel.cpp src/jsontreemodel.h
+        src/jsondatasource.cpp src/jsondatasource.h
+        src/largefileview.cpp src/largefileview.h
+        src/jsontab.cpp src/jsontab.h
+        src/jsonhighlighter.cpp src/jsonhighlighter.h
+        src/mainwindow.cpp src/mainwindow.h src/mainwindow.ui)
+    target_include_directories(hellojson_tests PRIVATE src)
+    target_link_libraries(hellojson_tests PRIVATE
+        Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Test)
+    add_test(NAME hellojson_tests COMMAND ${CMAKE_COMMAND}
+        "-DTEST_EXECUTABLE=$<TARGET_FILE:hellojson_tests>"
+        "-DTEST_LOG=${CMAKE_CURRENT_BINARY_DIR}/test-results.txt"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/run_tests.cmake")
+    set_tests_properties(hellojson_tests PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+        TIMEOUT 60)
+    if(WIN32)
+        add_custom_command(TARGET hellojson_tests POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE:Qt${QT_VERSION_MAJOR}::Test>"
+                "$<TARGET_FILE_DIR:hellojson_tests>")
+        get_target_property(QT_QMAKE_EXECUTABLE Qt${QT_VERSION_MAJOR}::qmake IMPORTED_LOCATION)
+        execute_process(COMMAND "${QT_QMAKE_EXECUTABLE}" -query QT_INSTALL_PLUGINS
+            OUTPUT_VARIABLE QT_PLUGIN_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+        set_tests_properties(hellojson_tests PROPERTIES ENVIRONMENT
+            "QT_QPA_PLATFORM=offscreen;QT_QPA_PLATFORM_PLUGIN_PATH=${QT_PLUGIN_DIR}/platforms")
+    endif()
 endif()
 
 target_link_libraries(hellojson PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)

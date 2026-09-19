@@ -1,5 +1,12 @@
 # Hello JSON
 
+The tree now uses QTreeView and a flat QAbstractItemModel, with a linked
+key/value table, node search, eight copy operations, subtree navigation,
+tab renaming, layout switching, and Unicode/escape conversion.
+Formatting preserves numeric literals, field order, and duplicate keys.
+See [HiJson Java feature comparison](docs/HIJSON_PARITY.md) for the reference
+version, supported operations, deliberate differences, limits, and test commands.
+
 A lightweight JSON formatter and viewer built with Qt.
 
 [中文](README_zh_CN.md)

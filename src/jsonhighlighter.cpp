@@ -3,9 +3,10 @@
 JsonHighlighter::JsonHighlighter(QTextDocument *parent)
     : QSyntaxHighlighter(parent)
 {
-    addStringRules();
     addNumberRule();
     addKeywordRule();
+    // Strings take precedence over numbers and keywords inside their contents.
+    addStringRules();
 }
 
 void JsonHighlighter::addStringRules()
@@ -27,7 +28,7 @@ void JsonHighlighter::addNumberRule()
 
     HighlightRule numberRule;
     numberRule.pattern = QRegularExpression(
-        R"(\b-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?\b)");
+        R"((?<![\w.])-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?\b)");
     numberRule.format = numberFormat;
     m_rules.append(numberRule);
 }

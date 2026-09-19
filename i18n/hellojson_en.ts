@@ -381,5 +381,133 @@
         <source>[%1]</source>
         <translation>[%1]</translation>
     </message>
+    <message>
+        <source>Tools</source>
+        <translation>Tools</translation>
+    </message>
+    <message>
+        <source>JSON Tools</source>
+        <translation>JSON Tools</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation>Paste</translation>
+    </message>
+    <message>
+        <source>Text Search</source>
+        <translation>Text Search</translation>
+    </message>
+    <message>
+        <source>Node Search</source>
+        <translation>Node Search</translation>
+    </message>
+    <message>
+        <source>Switch Layout</source>
+        <translation>Switch Layout</translation>
+    </message>
+    <message>
+        <source>Remove Newlines</source>
+        <translation>Remove Newlines</translation>
+    </message>
+    <message>
+        <source>Remove Backslashes</source>
+        <translation>Remove Backslashes</translation>
+    </message>
+    <message>
+        <source>Rename Tab</source>
+        <translation>Rename Tab</translation>
+    </message>
+    <message>
+        <source>Rename Window</source>
+        <translation>Rename Window</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Name</translation>
+    </message>
+    <message>
+        <source>Unicode / Escape Conversion</source>
+        <translation>Unicode / Escape Conversion</translation>
+    </message>
+    <message>
+        <source>Input escaped text</source>
+        <translation>Input escaped text</translation>
+    </message>
+    <message>
+        <source>Decode Escapes</source>
+        <translation>Decode Escapes</translation>
+    </message>
+    <message>
+        <source>Encode Unicode</source>
+        <translation>Encode Unicode</translation>
+    </message>
+    <message>
+        <source>Copy Key</source>
+        <translation>Copy Key</translation>
+    </message>
+    <message>
+        <source>Copy Key / Value</source>
+        <translation>Copy Key / Value</translation>
+    </message>
+    <message>
+        <source>Copy Node JSON</source>
+        <translation>Copy Node JSON</translation>
+    </message>
+    <message>
+        <source>Copy Similar Values</source>
+        <translation>Copy Similar Values</translation>
+    </message>
+    <message>
+        <source>Copy MAP Entry</source>
+        <translation>Copy MAP Entry</translation>
+    </message>
+    <message>
+        <source>Copy Formatted Node JSON</source>
+        <translation>Copy Formatted Node JSON</translation>
+    </message>
+    <message>
+        <source>Locate in Text</source>
+        <translation>Locate in Text</translation>
+    </message>
+    <message>
+        <source>Expand Subtree</source>
+        <translation>Expand Subtree</translation>
+    </message>
+    <message>
+        <source>Collapse Subtree</source>
+        <translation>Collapse Subtree</translation>
+    </message>
+    <message>
+        <source>Format valid JSON first</source>
+        <translation>Format valid JSON first</translation>
+    </message>
+    <message>
+        <source>&amp;Tree View</source>
+        <translation>&amp;Tree View</translation>
+    </message>
+    <message>
+        <source>JSON Tree</source>
+        <translation>JSON Tree</translation>
+    </message>
+    <message>
+        <source>Hide tree view</source>
+        <translation>Hide tree view</translation>
+    </message>
+    <message>
+        <source>Show JSON tree</source>
+        <translation>Show JSON tree</translation>
+    </message>
+    <message>
+        <source>Tree ▼</source>
+        <translation>Tree ▼</translation>
+    </message>
+    <message>
+        <source>Tree ▶</source>
+        <translation>Tree ▶</translation>
+    </message>
+    <message>
+        <source>Show / hide JSON tree view</source>
+        <translation>Show / hide JSON tree view</translation>
+    </message>
 </context>
 </TS>
