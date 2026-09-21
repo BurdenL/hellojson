@@ -14,7 +14,7 @@ class JsonDataSource
 public:
     static constexpr qint64 BlockBytes = 64 * 1024;
     static constexpr qint64 MaxReadBytes = 1024 * 1024;
-    static constexpr qint64 LargeFileThreshold = 32 * 1024 * 1024;
+    static constexpr qint64 LargeFileThreshold = 2 * 1024 * 1024;
     virtual ~JsonDataSource() = default;
     virtual qint64 size() const = 0;
     virtual QByteArray read(qint64 offset, qint64 length, QString *error) = 0;

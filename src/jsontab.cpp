@@ -1,4 +1,6 @@
 #include "jsontab.h"
+#include "boundededitor.h"
+#include <QSaveFile>
 #include "jsonhighlighter.h"
 #include "jsontreemodel.h"
 #include "largefileview.h"
@@ -15,7 +17,6 @@
 #include <QEvent>
 #include <QPlainTextEdit>
 #include <QPushButton>
-#include <QResizeEvent>
 #include <QSplitter>
 #include <QTreeView>
 #include <QTableView>
@@ -44,9 +45,13 @@ JsonTab::JsonTab(QWidget *parent)
     layout->setSpacing(0);
 
     m_splitter = new QSplitter(Qt::Horizontal, this);
+    m_splitter->setObjectName("editorSplitter");
 
     // ── Left: text editor ───────────────────────────────────────────────
-    m_inputEdit = new QPlainTextEdit(this);
+    auto *editor = new BoundedEditor(this);
+    editor->rejected = [this] { emit protectionMessage(trMain("Editing limit reached. Save the text to a file and use large-file mode.")); };
+    m_inputEdit = editor;
+    connect(editor->document(), &QTextDocument::modificationChanged, this, [this] { emit contentChanged(); });
     setFocusProxy(m_inputEdit);
     m_inputEdit->setPlaceholderText(trMain("Paste your JSON here..."));
     m_inputEdit->setTabStopDistance(20);
@@ -134,6 +139,7 @@ JsonTab::JsonTab(QWidget *parent)
 
     // ── Show-tree button (overlay on text editor, visible when tree hidden)
     m_showTreeBtn = new QPushButton(trMain("◀"), m_inputEdit);
+    m_showTreeBtn->setObjectName("showJsonTreeButton");
     m_showTreeBtn->setFixedSize(22, 44);
     m_showTreeBtn->setFlat(true);
     m_showTreeBtn->setToolTip(trMain("Show JSON tree"));
@@ -144,6 +150,7 @@ JsonTab::JsonTab(QWidget *parent)
     connect(m_showTreeBtn, &QPushButton::clicked, this,
             [this] { setTreeVisible(true); });
 
+    m_inputEdit->installEventFilter(this);
     m_splitter->addWidget(m_inputEdit);
     m_splitter->addWidget(m_treeContainer);
 
@@ -216,6 +223,7 @@ bool JsonTab::openFile(const QString &path, OpenMode mode, QString *error)
     setFocusProxy(m_inputEdit);
     m_filePath = info.absoluteFilePath();
     setText(content);
+    m_inputEdit->document()->setModified(false);
     emit contentChanged();
     return true;
 }
@@ -223,13 +231,20 @@ bool JsonTab::openFile(const QString &path, OpenMode mode, QString *error)
 void JsonTab::setText(const QString &text)
 {
     if (isLargeFile()) return;
+    if (text.size() > BoundedEditor::CharacterLimit) {
+        emit protectionMessage(trMain("Editing limit reached. Save the text to a file and use large-file mode."));
+        return;
+    }
     m_inputEdit->setPlainText(text);
+    m_inputEdit->document()->setModified(true);
 }
 
 void JsonTab::clear()
 {
     if (isLargeFile()) return;
-    m_inputEdit->clear();
+    const bool changed = !text().isEmpty() || isModified();
+    if (!text().isEmpty()) replaceText(QString());
+    m_inputEdit->document()->setModified(changed);
     m_model->clear();
     m_hasValidDocument = false;
     clearFind();
@@ -242,20 +257,21 @@ void JsonTab::setTreeVisible(bool visible)
 {
     if (isLargeFile()) return;
     const bool wasVisible = !m_treeContainer->isHidden();
+    if (wasVisible && !visible && m_treeContainer->isVisible()) m_savedTreeState = m_splitter->saveState();
     m_treeContainer->setVisible(visible);
     m_showTreeBtn->setVisible(!visible);
 
     // Position the ◀ overlay at the right edge of the text editor
     if (!visible && m_inputEdit) {
-        m_showTreeBtn->move(m_inputEdit->width() - m_showTreeBtn->width(),
-                            m_inputEdit->height() / 2 - m_showTreeBtn->height() / 2);
+        positionTreeButton();
         m_showTreeBtn->raise();
     }
 
     if (visible && !wasVisible) {
         const int extent = m_splitter->orientation() == Qt::Horizontal
             ? m_splitter->width() : m_splitter->height();
-        m_splitter->setSizes({extent * 3 / 5, extent * 2 / 5});
+        if (m_savedTreeState.isEmpty() || !m_splitter->restoreState(m_savedTreeState))
+            m_splitter->setSizes({extent * 3 / 5, extent * 2 / 5});
     }
     // When hidden: splitter has only one visible widget → editor fills 100%
 
@@ -268,21 +284,25 @@ bool JsonTab::isTreeVisible() const
     return !m_treeContainer->isHidden();
 }
 
-void JsonTab::resizeEvent(QResizeEvent *event)
+void JsonTab::positionTreeButton()
 {
-    QWidget::resizeEvent(event);
-    // Keep the ◀ overlay button at the top-right edge of the text editor
-    if (m_showTreeBtn && m_inputEdit) {
-        m_showTreeBtn->move(m_inputEdit->width() - m_showTreeBtn->width(),
-                            m_inputEdit->height() / 2 - m_showTreeBtn->height() / 2);
-    }
+    m_showTreeBtn->move(qMax(0, m_inputEdit->width() - m_showTreeBtn->width()),
+                        qMax(0, (m_inputEdit->height() - m_showTreeBtn->height()) / 2));
 }
 
+bool JsonTab::eventFilter(QObject *watched, QEvent *event)
+{
+    // Splitter relayout can resize the editor without resizing the tab itself.
+    if (watched == m_inputEdit && event->type() == QEvent::Resize)
+        positionTreeButton();
+    return QWidget::eventFilter(watched, event);
+}
 
 void JsonTab::formatJson(bool compressed)
 {
     if (isLargeFile()) return;
     clearFind();
+    m_operationError.clear();
     m_hasValidDocument = false;
     const QByteArray input = m_inputEdit->toPlainText().toUtf8();
     if (!m_model->setJson(input)) {
@@ -293,7 +313,14 @@ void JsonTab::formatJson(bool compressed)
         emit searchResultsChanged();
         return;
     }
-    const QString output = QString::fromUtf8(JsonTreeModel::format(input, !compressed));
+    const QByteArray formatted = JsonTreeModel::format(input, !compressed, BoundedEditor::CharacterLimit);
+    if (formatted.isEmpty() && !input.isEmpty()) {
+        m_model->clear();
+        m_operationError = trMain("Formatted output exceeds the editing limit. Use large-file mode to format to a file.");
+        emit protectionMessage(m_operationError);
+        return;
+    }
+    const QString output = QString::fromUtf8(formatted);
     replaceText(output);
     m_hasValidDocument = m_model->setJson(output.toUtf8());
     m_treeView->expand(m_model->index(0, 0));
@@ -306,8 +333,9 @@ void JsonTab::formatJson(bool compressed)
 
 QString JsonTab::parseError() const
 {
+    if (!m_operationError.isEmpty()) return m_operationError;
     return trMain("JSON Parse Error at offset %1: %2")
-        .arg(m_model->errorOffset()).arg(m_model->errorMessage());
+        .arg(m_model->errorOffset()).arg(QApplication::translate("JsonErrors", m_model->errorMessage().toUtf8().constData()));
 }
 
 void JsonTab::replaceText(const QString &text)
@@ -335,6 +363,7 @@ void JsonTab::refreshLanguage()
 void JsonTab::toggleLayout()
 {
     if (isLargeFile()) return;
+    m_savedTreeState.clear();
     m_splitter->setOrientation(m_splitter->orientation() == Qt::Horizontal ? Qt::Vertical : Qt::Horizontal);
 }
 void JsonTab::paste() { if (!isLargeFile()) m_inputEdit->paste(); }
@@ -412,6 +441,7 @@ void JsonTab::collapseAll()
 void JsonTab::findText(const QString &text)
 {
     if (isLargeFile()) return;
+    m_searchLimited = false;
     m_searchText = text;
     clearFind();
     if (text.isEmpty()) return;
@@ -421,6 +451,7 @@ void JsonTab::findText(const QString &text)
             if (!m_hasValidDocument) return;
         }
         m_nodeMatches = m_model->findNodes(text);
+        m_searchLimited = m_nodeMatches.size() >= 5000;
         selectNodeMatch(0);
         return;
     }
@@ -438,6 +469,7 @@ void JsonTab::findText(const QString &text)
     while (true) {
         cursor = doc->find(text, cursor);
         if (cursor.isNull()) break;
+        if (m_matchPositions.size() >= 5000) { m_searchLimited = true; break; }
         m_matchPositions.append(cursor);
     }
 
@@ -579,4 +611,31 @@ void JsonTab::showContextMenu(const QModelIndex &idx, const QPoint &globalPos)
     default: return;
     }
     QApplication::clipboard()->setText(result);
+}
+
+bool JsonTab::isModified() const
+{
+    return !isLargeFile() && m_inputEdit->document()->isModified();
+}
+
+bool JsonTab::saveFile(const QString &path, QString *error)
+{
+    if (error) error->clear();
+    if (isLargeFile()) { if (error) *error = trMain("Large-file mode is read-only."); return false; }
+    QSaveFile output(path);
+    output.setDirectWriteFallback(false);
+    const QByteArray bytes = text().toUtf8();
+    if (!output.open(QIODevice::WriteOnly) || output.write(bytes) != bytes.size() || !output.commit()) {
+        if (error) *error = output.errorString();
+        return false;
+    }
+    m_filePath = QFileInfo(path).absoluteFilePath();
+    m_inputEdit->document()->setModified(false);
+    emit contentChanged();
+    return true;
+}
+
+QByteArray JsonTab::viewState() const { return !isTreeVisible() && !m_savedTreeState.isEmpty() ? m_savedTreeState : m_splitter->saveState(); }
+void JsonTab::restoreViewState(const QByteArray &state) {
+    if (!state.isEmpty() && m_splitter->restoreState(state)) m_savedTreeState = state;
 }

@@ -178,15 +178,16 @@ QString JsonTreeModel::path(const QModelIndex &idx) const
     return "$" + segments.join(QString());
 }
 
-QByteArray JsonTreeModel::format(const QByteArray &input, bool pretty)
+QByteArray JsonTreeModel::format(const QByteArray &input, bool pretty, int outputLimit)
 {
     QByteArray out;
-    out.reserve(input.size());
+    out.reserve(qMin(input.size(), qsizetype(outputLimit)));
     int depth = 0;
     bool string = false, escape = false;
     char previous = 0;
     auto newline = [&] { out += '\n'; out += QByteArray(depth * 4, ' '); };
     for (int i = 0; i < input.size(); ++i) {
+        if (out.size() > outputLimit) return {};
         char c = input[i];
         if (string) {
             out += c;
@@ -211,7 +212,7 @@ QByteArray JsonTreeModel::format(const QByteArray &input, bool pretty)
         else out += c;
         previous = c;
     }
-    return out;
+    return out.size() <= outputLimit ? out : QByteArray();
 }
 
 QByteArray JsonTreeModel::json(const QModelIndex &idx, bool pretty) const
@@ -240,7 +241,7 @@ QVector<uint32_t> JsonTreeModel::findNodes(const QString &query) const
 {
     QVector<uint32_t> result;
     if (!m_valid || query.isEmpty()) return result;
-    for (int i = 1; i < m_index.nodes().size(); ++i) {
+    for (int i = 1; i < m_index.nodes().size() && result.size() < 5000; ++i) {
         QModelIndex idx = indexForId(uint32_t(i));
         if (key(idx).contains(query, Qt::CaseInsensitive) ||
             value(idx).contains(query, Qt::CaseInsensitive)) result.append(uint32_t(i));

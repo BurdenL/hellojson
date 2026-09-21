@@ -1,0 +1,61 @@
+{
+  "measured_on": "2026-09-20",
+  "environment": "Windows 11; Qt 6.11.1; MSVC Debug; offscreen 1200x780; freshly generated real files, OS cache may be warm",
+  "measurements": [
+    {
+      "cached_file_bytes": 524288,
+      "disk_bytes_read": 3014656,
+      "file_bytes": 8388608,
+      "first_display_ms": 71,
+      "max_event_loop_gap_ms": 72,
+      "max_navigation_ms": 60,
+      "mode": "tree",
+      "page_characters": 60436,
+      "peak_working_set_mib": 51.078125,
+      "private_delta_mib": 4.92578125,
+      "private_mib": 13.68359375,
+      "tree": {
+        "back_page_cache_hit": true,
+        "index_disk_bytes": 275300,
+        "max_tree_page_ms": 90,
+        "nodes_after_collapse": 1,
+        "pages_visited": 20,
+        "resident_nodes": 129
+      }
+    },
+    {
+      "cached_file_bytes": 524288,
+      "disk_bytes_read": 3014656,
+      "file_bytes": 1073741824,
+      "first_display_ms": 71,
+      "max_event_loop_gap_ms": 73,
+      "max_navigation_ms": 61,
+      "mode": "tree",
+      "page_characters": 60436,
+      "peak_working_set_mib": 51.16796875,
+      "private_delta_mib": 4.95703125,
+      "private_mib": 13.69140625,
+      "tree": {
+        "back_page_cache_hit": true,
+        "index_disk_bytes": 275300,
+        "max_tree_page_ms": 88,
+        "nodes_after_collapse": 1,
+        "pages_visited": 20,
+        "resident_nodes": 129
+      }
+    },
+    {
+      "cached_file_bytes": 524288,
+      "disk_bytes_read": 3014656,
+      "file_bytes": 1073741824,
+      "first_display_ms": 374,
+      "max_event_loop_gap_ms": 323,
+      "max_navigation_ms": 353,
+      "mode": "paged",
+      "page_characters": 35296,
+      "peak_working_set_mib": 50.3515625,
+      "private_delta_mib": 3.3359375,
+      "private_mib": 12.01953125
+    }
+  ]
+}

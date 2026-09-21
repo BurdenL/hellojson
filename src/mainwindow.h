@@ -9,6 +9,7 @@ class QLabel;
 class QPushButton;
 class QTranslator;
 class QComboBox;
+class QTimer;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -26,6 +27,7 @@ public:
 
 protected:
     void changeEvent(QEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 private slots:
@@ -57,8 +59,12 @@ private slots:
     void onFindClose();
 
 private:
+    bool saveTab(JsonTab *tab, bool saveAs = false);
+    bool confirmDiscard(JsonTab *tab);
+    void persistSettings();
+    QString m_lastDirectory;
     JsonTab *currentTab() const;
-    JsonTab *createTab(const QString &title);
+    JsonTab *createTab(const QString &title, bool defaultTitle = false);
     void ensurePlusTab();
     void switchLanguage(const QString &locale);
     void loadTranslation(const QString &locale);
@@ -67,6 +73,7 @@ private:
     void showFindBar(bool visible);
     void performSearch();
     void setupHiJsonActions();
+    void setupMenuLayout();
     void refreshDynamicTexts();
     void updateSearchCount();
     void showUnicodeConverter();
@@ -74,6 +81,7 @@ private:
 
     Ui::MainWindow *ui;
     QTranslator *m_translator = nullptr;
+    QTranslator *m_qtTranslator = nullptr;
     QString m_currentLocale;
 
     // Toggle tree button
@@ -85,6 +93,7 @@ private:
     QComboBox   *m_findMode = nullptr;
     QLabel      *m_findCountLabel = nullptr;
     QString      m_lastSearchText;
+    QTimer *m_searchTimer = nullptr;
 };
 
 #endif // MAINWINDOW_H

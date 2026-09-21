@@ -33,7 +33,7 @@ public:
     int errorOffset() const { return m_index.errorOffset(); }
     QString errorMessage() const { return m_index.errorMessage(); }
     const QByteArray &source() const { return m_source; }
-    static QByteArray format(const QByteArray &validJson, bool pretty);
+    static QByteArray format(const QByteArray &validJson, bool pretty, int outputLimit = 8 * 1024 * 1024);
     static QString quote(const QString &text);
     static QString unescape(const QString &text);
 private:

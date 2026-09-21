@@ -83,6 +83,7 @@ bool JsonIndex::build(const QByteArray &utf8json)
         } else {
             return fail("Unexpected character");
         }
+        if (m_nodes.size() > 250000) return fail("Too many nodes for editing mode. Use large-file mode.");
         uint32_t id = addNode(type, parent, keyOff, keyLen, start, len);
         rootRead = true;
         if (type == IndexNode::Object || type == IndexNode::Array) {

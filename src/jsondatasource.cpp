@@ -22,7 +22,11 @@ static bool validRange(qint64 size, qint64 offset, qint64 length, QString *error
 QByteArray MemoryJsonSource::read(qint64 offset, qint64 length, QString *error)
 {
     if (!validRange(size(), offset, length, error)) return {};
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return m_bytes.mid(qsizetype(offset), qsizetype(qMin(length, size() - offset)));
+#else
     return m_bytes.mid(int(offset), int(qMin(length, size() - offset)));
+#endif
 }
 
 bool FileJsonSource::open(const QString &path, QString *error)

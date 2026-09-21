@@ -1,0 +1,53 @@
+{
+  "measured_on": "2026-09-20",
+  "environment": "Windows 11; Qt 6.11.1 MSVC Debug; offscreen 1200x780; real generated arrays; OS cache may be warm; build/tests also ran during the 1 GiB measurement",
+  "operations": "16 text jumps, whole-file absent-string search, locate around byte 1310820, full raw export, full formatting, compress the formatted output",
+  "measurements": [
+    {
+      "cached_file_bytes": 524288,
+      "disk_bytes_read": 3014656,
+      "file_bytes": 104857600,
+      "first_display_ms": 72,
+      "max_event_loop_gap_ms": 93,
+      "max_navigation_ms": 59,
+      "mode": "tasks",
+      "page_characters": 60436,
+      "peak_working_set_mib": 51.5703125,
+      "private_delta_mib": 5.2265625,
+      "private_mib": 13.9921875,
+      "tasks": {
+        "compress_ms": 14785,
+        "compressed_bytes": 103495739,
+        "export_ms": 189,
+        "format_ms": 16857,
+        "formatted_bytes": 144349324,
+        "full_search_ms": 123,
+        "locate_ms": 116,
+        "located_depth": 3
+      }
+    },
+    {
+      "cached_file_bytes": 524288,
+      "disk_bytes_read": 3014656,
+      "file_bytes": 1073741824,
+      "first_display_ms": 73,
+      "max_event_loop_gap_ms": 254,
+      "max_navigation_ms": 103,
+      "mode": "tasks",
+      "page_characters": 60436,
+      "peak_working_set_mib": 51.55078125,
+      "private_delta_mib": 5.109375,
+      "private_mib": 13.75390625,
+      "tasks": {
+        "compress_ms": 150486,
+        "compressed_bytes": 1059797051,
+        "export_ms": 1687,
+        "format_ms": 171218,
+        "formatted_bytes": 1478137996,
+        "full_search_ms": 1287,
+        "locate_ms": 115,
+        "located_depth": 3
+      }
+    }
+  ]
+}

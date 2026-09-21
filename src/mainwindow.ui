@@ -41,7 +41,7 @@
          <number>32</number>
         </property>
         <property name="toolTip">
-         <string>Format JSON with indentation (Ctrl+F)</string>
+         <string>Format JSON with indentation (Ctrl+Alt+F)</string>
         </property>
        </widget>
       </item>
@@ -141,6 +141,7 @@
     </property>
     <addaction name="actionEnglish"/>
     <addaction name="actionChinese"/>
+    <addaction name="actionTraditionalChinese"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -172,7 +173,7 @@
   </action>
   <action name="actionSave">
    <property name="text">
-    <string>&amp;Save As...</string>
+    <string>&amp;Save</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
@@ -191,7 +192,7 @@
     <string>&amp;Format</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+F</string>
+    <string notr="true">Ctrl+Alt+F</string>
    </property>
   </action>
   <action name="actionCompress">
@@ -215,7 +216,7 @@
     <string>&amp;Find...</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Shift+F</string>
+    <string notr="true">Ctrl+F</string>
    </property>
   </action>
   <action name="actionEnglish">
@@ -231,8 +232,12 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>中文</string>
+    <string notr="true">简体中文</string>
    </property>
+  </action>
+  <action name="actionTraditionalChinese">
+   <property name="checkable"><bool>true</bool></property>
+   <property name="text"><string notr="true">繁體中文</string></property>
   </action>
   <action name="actionNewTab">
    <property name="text">

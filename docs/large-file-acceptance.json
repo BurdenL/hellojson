@@ -1,0 +1,482 @@
+{
+  "measured_at_utc": "2026-09-21T11:04:44.6525079Z",
+  "build_directory": "E:\\Coder\\qt_project\\hellojson\\out\\build\\release",
+  "environment": "Windows; offscreen 1200x780; actual generated files; OS cache may be warm",
+  "passed": true,
+  "results": [
+    {
+      "name": "array-100m",
+      "mode": "stress",
+      "shape": "array",
+      "measurement": {
+        "baseline_after_qt_warmup": {
+          "handles": 208,
+          "peak_working_set_mib": 29.43359375,
+          "private_mib": 9.0625,
+          "threads": 10,
+          "working_set_mib": 28.73046875
+        },
+        "cycle_count": 3,
+        "cycles": [
+          {
+            "close_cleanup_ms": 32,
+            "closed": {
+              "handles": 224,
+              "peak_working_set_mib": 53.41015625,
+              "private_mib": 15.59375,
+              "threads": 13,
+              "working_set_mib": 32.3046875
+            },
+            "loaded": {
+              "handles": 320,
+              "peak_working_set_mib": 52.28515625,
+              "private_mib": 36.734375,
+              "threads": 37,
+              "working_set_mib": 52.28515625
+            }
+          },
+          {
+            "close_cleanup_ms": 32,
+            "closed": {
+              "handles": 224,
+              "peak_working_set_mib": 53.54296875,
+              "private_mib": 14.56640625,
+              "threads": 13,
+              "working_set_mib": 32.68359375
+            },
+            "loaded": {
+              "handles": 320,
+              "peak_working_set_mib": 53.41015625,
+              "private_mib": 37.34375,
+              "threads": 37,
+              "working_set_mib": 52.83203125
+            }
+          },
+          {
+            "close_cleanup_ms": 31,
+            "closed": {
+              "handles": 224,
+              "peak_working_set_mib": 55.12890625,
+              "private_mib": 14.70703125,
+              "threads": 13,
+              "working_set_mib": 33.21875
+            },
+            "loaded": {
+              "handles": 320,
+              "peak_working_set_mib": 54.18359375,
+              "private_mib": 38.41796875,
+              "threads": 37,
+              "working_set_mib": 54.18359375
+            }
+          }
+        ],
+        "error": "",
+        "file_bytes": 104857600,
+        "final_resources": {
+          "handles": 224,
+          "peak_working_set_mib": 55.12890625,
+          "private_mib": 14.765625,
+          "threads": 13,
+          "working_set_mib": 33.27734375
+        },
+        "jumps_per_tab_per_cycle": 4,
+        "max_aggregate_text_cache_bytes": 4194304,
+        "max_event_loop_gap_ms": 25,
+        "max_index_bytes_per_tab": 66792,
+        "max_navigation_ms": 10,
+        "max_resident_nodes_per_tab": 261,
+        "passed": true,
+        "tabs_per_cycle": 8,
+        "temporary_files_removed": true,
+        "tracked_worker_count": 72
+      }
+    },
+    {
+      "name": "array-1g",
+      "mode": "stress",
+      "shape": "array",
+      "measurement": {
+        "baseline_after_qt_warmup": {
+          "handles": 204,
+          "peak_working_set_mib": 29.4296875,
+          "private_mib": 9.03515625,
+          "threads": 9,
+          "working_set_mib": 28.7109375
+        },
+        "cycle_count": 3,
+        "cycles": [
+          {
+            "close_cleanup_ms": 31,
+            "closed": {
+              "handles": 224,
+              "peak_working_set_mib": 52.73046875,
+              "private_mib": 15.82421875,
+              "threads": 13,
+              "working_set_mib": 31.5546875
+            },
+            "loaded": {
+              "handles": 320,
+              "peak_working_set_mib": 52.01953125,
+              "private_mib": 36.48828125,
+              "threads": 37,
+              "working_set_mib": 52.01953125
+            }
+          },
+          {
+            "close_cleanup_ms": 31,
+            "closed": {
+              "handles": 224,
+              "peak_working_set_mib": 53.078125,
+              "private_mib": 15.01953125,
+              "threads": 13,
+              "working_set_mib": 32.37890625
+            },
+            "loaded": {
+              "handles": 320,
+              "peak_working_set_mib": 52.73046875,
+              "private_mib": 36.66796875,
+              "threads": 37,
+              "working_set_mib": 52.0625
+            }
+          },
+          {
+            "close_cleanup_ms": 32,
+            "closed": {
+              "handles": 224,
+              "peak_working_set_mib": 53.078125,
+              "private_mib": 13.63671875,
+              "threads": 13,
+              "working_set_mib": 32.60546875
+            },
+            "loaded": {
+              "handles": 320,
+              "peak_working_set_mib": 53.078125,
+              "private_mib": 36.9765625,
+              "threads": 37,
+              "working_set_mib": 52.10546875
+            }
+          }
+        ],
+        "error": "",
+        "file_bytes": 1073741824,
+        "final_resources": {
+          "handles": 224,
+          "peak_working_set_mib": 53.078125,
+          "private_mib": 13.6953125,
+          "threads": 13,
+          "working_set_mib": 32.6640625
+        },
+        "jumps_per_tab_per_cycle": 4,
+        "max_aggregate_text_cache_bytes": 4194304,
+        "max_event_loop_gap_ms": 47,
+        "max_index_bytes_per_tab": 66792,
+        "max_navigation_ms": 55,
+        "max_resident_nodes_per_tab": 261,
+        "passed": true,
+        "tabs_per_cycle": 8,
+        "temporary_files_removed": true,
+        "tracked_worker_count": 72
+      }
+    },
+    {
+      "name": "nested-1g",
+      "mode": "stress",
+      "shape": "nested",
+      "measurement": {
+        "baseline_after_qt_warmup": {
+          "handles": 208,
+          "peak_working_set_mib": 31.578125,
+          "private_mib": 9.55859375,
+          "threads": 10,
+          "working_set_mib": 28.81640625
+        },
+        "cycle_count": 3,
+        "cycles": [
+          {
+            "close_cleanup_ms": 30,
+            "closed": {
+              "handles": 222,
+              "peak_working_set_mib": 48.59765625,
+              "private_mib": 11.76171875,
+              "threads": 13,
+              "working_set_mib": 31.0546875
+            },
+            "loaded": {
+              "handles": 318,
+              "peak_working_set_mib": 48.59765625,
+              "private_mib": 30.375,
+              "threads": 37,
+              "working_set_mib": 46.62109375
+            }
+          },
+          {
+            "close_cleanup_ms": 30,
+            "closed": {
+              "handles": 223,
+              "peak_working_set_mib": 50.7109375,
+              "private_mib": 11.875,
+              "threads": 13,
+              "working_set_mib": 31.30859375
+            },
+            "loaded": {
+              "handles": 319,
+              "peak_working_set_mib": 50.7109375,
+              "private_mib": 30.82421875,
+              "threads": 37,
+              "working_set_mib": 47.44921875
+            }
+          },
+          {
+            "close_cleanup_ms": 31,
+            "closed": {
+              "handles": 223,
+              "peak_working_set_mib": 50.8125,
+              "private_mib": 11.59765625,
+              "threads": 13,
+              "working_set_mib": 31.23046875
+            },
+            "loaded": {
+              "handles": 319,
+              "peak_working_set_mib": 50.8125,
+              "private_mib": 30.09765625,
+              "threads": 37,
+              "working_set_mib": 46.37890625
+            }
+          }
+        ],
+        "error": "",
+        "file_bytes": 1073741824,
+        "final_resources": {
+          "handles": 223,
+          "peak_working_set_mib": 50.8125,
+          "private_mib": 11.65625,
+          "threads": 13,
+          "working_set_mib": 31.2890625
+        },
+        "jumps_per_tab_per_cycle": 4,
+        "max_aggregate_text_cache_bytes": 4194304,
+        "max_event_loop_gap_ms": 27,
+        "max_index_bytes_per_tab": 65848,
+        "max_navigation_ms": 27,
+        "max_resident_nodes_per_tab": 258,
+        "passed": true,
+        "tabs_per_cycle": 8,
+        "temporary_files_removed": true,
+        "tracked_worker_count": 72
+      }
+    },
+    {
+      "name": "string-1g",
+      "mode": "stress",
+      "shape": "string",
+      "measurement": {
+        "baseline_after_qt_warmup": {
+          "handles": 220,
+          "peak_working_set_mib": 31.2265625,
+          "private_mib": 9.03515625,
+          "threads": 13,
+          "working_set_mib": 28.73046875
+        },
+        "cycle_count": 3,
+        "cycles": [
+          {
+            "close_cleanup_ms": 31,
+            "closed": {
+              "handles": 222,
+              "peak_working_set_mib": 46.16015625,
+              "private_mib": 12.44921875,
+              "threads": 10,
+              "working_set_mib": 31.02734375
+            },
+            "loaded": {
+              "handles": 318,
+              "peak_working_set_mib": 46.16015625,
+              "private_mib": 25.58203125,
+              "threads": 34,
+              "working_set_mib": 40.87890625
+            }
+          },
+          {
+            "close_cleanup_ms": 30,
+            "closed": {
+              "handles": 222,
+              "peak_working_set_mib": 49.4765625,
+              "private_mib": 12.5859375,
+              "threads": 10,
+              "working_set_mib": 31.390625
+            },
+            "loaded": {
+              "handles": 318,
+              "peak_working_set_mib": 49.4765625,
+              "private_mib": 25.74609375,
+              "threads": 34,
+              "working_set_mib": 41.51171875
+            }
+          },
+          {
+            "close_cleanup_ms": 31,
+            "closed": {
+              "handles": 222,
+              "peak_working_set_mib": 49.4765625,
+              "private_mib": 11.44921875,
+              "threads": 10,
+              "working_set_mib": 31.2890625
+            },
+            "loaded": {
+              "handles": 318,
+              "peak_working_set_mib": 49.4765625,
+              "private_mib": 25.9140625,
+              "threads": 34,
+              "working_set_mib": 41.7578125
+            }
+          }
+        ],
+        "error": "",
+        "file_bytes": 1073741824,
+        "final_resources": {
+          "handles": 222,
+          "peak_working_set_mib": 49.4765625,
+          "private_mib": 11.50390625,
+          "threads": 10,
+          "working_set_mib": 31.34375
+        },
+        "jumps_per_tab_per_cycle": 4,
+        "max_aggregate_text_cache_bytes": 4194304,
+        "max_event_loop_gap_ms": 153,
+        "max_index_bytes_per_tab": 0,
+        "max_navigation_ms": 76,
+        "max_resident_nodes_per_tab": 0,
+        "passed": true,
+        "tabs_per_cycle": 8,
+        "temporary_files_removed": true,
+        "tracked_worker_count": 72
+      }
+    },
+    {
+      "name": "invalid-100m",
+      "mode": "fault",
+      "shape": "invalid",
+      "measurement": {
+        "destination_preserved": true,
+        "file_bytes": 104857600,
+        "passed": true,
+        "resources": {
+          "handles": 216,
+          "peak_working_set_mib": 31.82421875,
+          "private_mib": 11.96875,
+          "threads": 12,
+          "working_set_mib": 30.5234375
+        },
+        "temporary_output_removed": true,
+        "validation_error": "Byte 104857524: Expected comma or closing bracket",
+        "validation_ms": 2720
+      }
+    },
+    {
+      "name": "truncated-1g",
+      "mode": "fault",
+      "shape": "truncated",
+      "measurement": {
+        "destination_preserved": true,
+        "file_bytes": 1073741824,
+        "passed": true,
+        "resources": {
+          "handles": 228,
+          "peak_working_set_mib": 32.01953125,
+          "private_mib": 11.37109375,
+          "threads": 15,
+          "working_set_mib": 30.6484375
+        },
+        "temporary_output_removed": true,
+        "validation_error": "Byte 1073741824: Expected comma or closing bracket",
+        "validation_ms": 28044
+      }
+    },
+    {
+      "name": "deep-1g",
+      "mode": "fault",
+      "shape": "deep",
+      "measurement": {
+        "destination_preserved": true,
+        "file_bytes": 1073741824,
+        "passed": true,
+        "resources": {
+          "handles": 220,
+          "peak_working_set_mib": 31.24609375,
+          "private_mib": 10.328125,
+          "threads": 13,
+          "working_set_mib": 29.56640625
+        },
+        "temporary_output_removed": true,
+        "validation_error": "Byte 513: Maximum nesting depth (512) exceeded",
+        "validation_ms": 43
+      }
+    },
+    {
+      "name": "operations-100m",
+      "mode": "tasks",
+      "shape": "array",
+      "measurement": {
+        "cached_file_bytes": 524288,
+        "disk_bytes_read": 3014656,
+        "file_bytes": 104857600,
+        "first_display_ms": 13,
+        "max_event_loop_gap_ms": 44,
+        "max_navigation_ms": 6,
+        "mode": "tasks",
+        "page_characters": 60436,
+        "peak_working_set_mib": 35.46484375,
+        "private_delta_mib": 5.44140625,
+        "private_mib": 13.671875,
+        "tasks": {
+          "compress_ms": 3040,
+          "compressed_bytes": 103495739,
+          "export_ms": 116,
+          "format_ms": 2758,
+          "formatted_bytes": 144349324,
+          "full_search_ms": 64,
+          "locate_ms": 19,
+          "located_depth": 3
+        }
+      }
+    },
+    {
+      "name": "operations-1g",
+      "mode": "tasks",
+      "shape": "array",
+      "measurement": {
+        "cached_file_bytes": 524288,
+        "disk_bytes_read": 3014656,
+        "file_bytes": 1073741824,
+        "first_display_ms": 12,
+        "max_event_loop_gap_ms": 188,
+        "max_navigation_ms": 6,
+        "mode": "tasks",
+        "page_characters": 60436,
+        "peak_working_set_mib": 35.140625,
+        "private_delta_mib": 5.0546875,
+        "private_mib": 13.28125,
+        "tasks": {
+          "compress_ms": 30811,
+          "compressed_bytes": 1059797051,
+          "export_ms": 1218,
+          "format_ms": 27877,
+          "formatted_bytes": 1478137996,
+          "full_search_ms": 636,
+          "locate_ms": 20,
+          "located_depth": 3
+        }
+      }
+    }
+  ],
+  "validation": {
+    "qt_version": "6.11.1",
+    "configuration": "Release x64",
+    "qt_tests_debug": 128,
+    "qt_tests_release": 128,
+    "ui_navigation_and_event_gap_limit_ms": 500,
+    "peak_working_set_limit_mib": 512,
+    "packaged_tests": 128,
+    "packaged_startup_sdk_path_excluded": true
+  }
+}

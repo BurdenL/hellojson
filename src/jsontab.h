@@ -26,6 +26,11 @@ public:
     bool openFile(const QString &path, OpenMode mode, QString *error);
     bool isLargeFile() const { return m_largeFileView != nullptr; }
     QString filePath() const { return m_filePath; }
+    bool isModified() const;
+    bool saveFile(const QString &path, QString *error);
+    QByteArray viewState() const;
+    void restoreViewState(const QByteArray &state);
+    bool searchLimited() const { return m_searchLimited; }
 
     QString text() const;
     void setText(const QString &text);
@@ -59,17 +64,19 @@ public:
     void collapseAll();
 
 protected:
-    void resizeEvent(QResizeEvent *event) override;
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private slots:
     void onTreeContextMenu(const QPoint &pos);
 
 signals:
     void contentChanged();
+    void protectionMessage(const QString &message);
     void treeVisibilityChanged(bool visible);
     void searchResultsChanged();
 
 private:
+    void positionTreeButton();
     void selectNodeMatch(int position);
     void showNode(const QModelIndex &index);
     void showContextMenu(const QModelIndex &index, const QPoint &globalPos);
@@ -90,6 +97,9 @@ private:
     QPushButton        *m_showTreeBtn;
     QSplitter          *m_splitter;
     bool                m_hasValidDocument = false;
+    bool m_searchLimited = false;
+    QByteArray m_savedTreeState;
+    QString m_operationError;
     bool                m_nodeSearch = false;
     QVector<uint32_t>   m_nodeMatches;
     int                m_currentNodeMatch = -1;

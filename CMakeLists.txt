@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.16)
 
 project(hellojson VERSION 0.1 LANGUAGES CXX)
 
+if(MSVC)
+    # Match source encoding and the raw dependency-prefix probe.
+    add_compile_options(/utf-8)
+endif()
+
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -12,7 +17,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 
-set(TS_FILES i18n/hellojson_zh_CN.ts i18n/hellojson_en.ts)
+set(TS_FILES i18n/hellojson_zh_CN.ts i18n/hellojson_zh_TW.ts i18n/hellojson_en.ts)
 
 set(PROJECT_SOURCES
         src/main.cpp
@@ -27,6 +32,9 @@ set(PROJECT_SOURCES
         src/jsontreemodel.h
         src/jsondatasource.cpp src/jsondatasource.h
         src/largefileview.cpp src/largefileview.h
+        src/largetreeindex.cpp src/largetreeindex.h
+        src/largetreemodel.cpp src/largetreemodel.h
+        src/largefiletasks.cpp src/largefiletasks.h src/largefileactions.cpp
         src/jsonhighlighter.cpp
         src/jsonhighlighter.h
 )
@@ -36,12 +44,30 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
     )
-    # qt_add_translations: compiles .ts → .qm AND embeds them as Qt resources
-    # (:/i18n/hellojson_zh_CN.qm  and  :/i18n/hellojson_en.qm)
+    # QM_FILES_OUTPUT_VARIABLE disables automatic embedding. Add the generated
+    # catalogs explicitly so every executable works without adjacent .qm files.
     qt_add_translations(hellojson
         TS_FILES ${TS_FILES}
         QM_FILES_OUTPUT_VARIABLE QM_FILES
     )
+    qt_add_resources(hellojson app_translations
+        PREFIX "/i18n" BASE "${CMAKE_CURRENT_BINARY_DIR}" FILES ${QM_FILES})
+    get_target_property(TRANSLATION_QMAKE Qt6::qmake IMPORTED_LOCATION)
+    execute_process(COMMAND "${TRANSLATION_QMAKE}" -query QT_INSTALL_TRANSLATIONS
+        OUTPUT_VARIABLE QT_TRANSLATIONS_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set(QT_CHINESE_CATALOGS)
+    foreach(locale zh_CN zh_TW)
+        set(catalog "${QT_TRANSLATIONS_DIR}/qtbase_${locale}.qm")
+        if(EXISTS "${catalog}")
+            list(APPEND QT_CHINESE_CATALOGS "${catalog}")
+            configure_file("${catalog}" "${CMAKE_CURRENT_BINARY_DIR}/qtbase_${locale}.qm" COPYONLY)
+        endif()
+    endforeach()
+    if(QT_CHINESE_CATALOGS)
+        qt_add_resources(hellojson qt_chinese_translations
+            PREFIX "/i18n" BASE "${QT_TRANSLATIONS_DIR}" FILES ${QT_CHINESE_CATALOGS})
+    endif()
+
 else()
     if(ANDROID)
         add_library(hellojson SHARED
@@ -65,10 +91,38 @@ if(BUILD_TESTING)
         src/jsontreemodel.cpp src/jsontreemodel.h
         src/jsondatasource.cpp src/jsondatasource.h
         src/largefileview.cpp src/largefileview.h
+        src/largetreeindex.cpp src/largetreeindex.h
+        src/largetreemodel.cpp src/largetreemodel.h
+        src/largefiletasks.cpp src/largefiletasks.h src/largefileactions.cpp
         src/jsontab.cpp src/jsontab.h
         src/jsonhighlighter.cpp src/jsonhighlighter.h
         src/mainwindow.cpp src/mainwindow.h src/mainwindow.ui)
+    if(QT_VERSION_MAJOR EQUAL 6)
+        qt_add_resources(hellojson_tests test_app_translations
+            PREFIX "/i18n" BASE "${CMAKE_CURRENT_BINARY_DIR}" FILES ${QM_FILES})
+        if(QT_CHINESE_CATALOGS)
+            qt_add_resources(hellojson_tests test_qt_translations
+                PREFIX "/i18n" BASE "${QT_TRANSLATIONS_DIR}" FILES ${QT_CHINESE_CATALOGS})
+        endif()
+    endif()
     target_include_directories(hellojson_tests PRIVATE src)
+    add_executable(hellojson_benchmark
+        tests/benchmark_largefile.cpp
+        tests/stress_largefile.cpp
+        src/jsondatasource.cpp src/jsondatasource.h
+        src/largefileview.cpp src/largefileview.h
+        src/largetreeindex.cpp src/largetreeindex.h
+        src/largetreemodel.cpp src/largetreemodel.h
+        src/largefiletasks.cpp src/largefiletasks.h src/largefileactions.cpp
+        src/jsonindex.cpp src/jsonindex.h
+        src/jsontreemodel.cpp src/jsontreemodel.h
+        src/jsontab.cpp src/jsontab.h
+        src/jsonhighlighter.cpp src/jsonhighlighter.h)
+    target_include_directories(hellojson_benchmark PRIVATE src)
+    target_link_libraries(hellojson_benchmark PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+    if(WIN32)
+        target_link_libraries(hellojson_benchmark PRIVATE Psapi)
+    endif()
     target_link_libraries(hellojson_tests PRIVATE
         Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Test)
     add_test(NAME hellojson_tests COMMAND ${CMAKE_COMMAND}
@@ -138,3 +192,5 @@ if(QT_VERSION_MAJOR EQUAL 6)
         endif()
     endif()
 endif()
+
+include(cmake/MsvcNinjaDependencies.cmake)

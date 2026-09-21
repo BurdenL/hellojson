@@ -9,6 +9,13 @@
 #include <QRegularExpressionValidator>
 #include <QFontDatabase>
 #include <QCoreApplication>
+#include <QTreeView>
+#include <QSplitter>
+#include <QHeaderView>
+#include <QFileInfo>
+#include <QComboBox>
+#include <QToolButton>
+#include <QAction>
 
 static QString caption(const char *text)
 {
@@ -17,12 +24,12 @@ static QString caption(const char *text)
 
 PageReader::PageReader(std::shared_ptr<std::atomic<quint64>> latest) : m_latest(std::move(latest)) {}
 
-void PageReader::load(const QString &path, qint64 page, quint64 request)
+void PageReader::load(const QString &path, qint64 page, quint64 request, bool reopen)
 {
     if (request != m_latest->load()) return;
     JsonTextPage result;
     result.request = request;
-    if (path != m_path) {
+    if (reopen || path != m_path) {
         m_path.clear();
         m_source = std::make_unique<FileJsonSource>();
         if (!m_source->open(path, &result.error)) { emit ready(result); return; }
@@ -79,7 +86,59 @@ LargeFileView::LargeFileView(QWidget *parent)
     m_text->setLineWrapMode(QPlainTextEdit::WidgetWidth);
     m_text->setWordWrapMode(QTextOption::WrapAnywhere);
     setFocusProxy(m_text);
-    layout->addWidget(m_text);
+    auto *splitter = new QSplitter(this);
+    splitter->addWidget(m_text);
+    auto *treePanel = new QWidget(splitter);
+    auto *treeLayout = new QVBoxLayout(treePanel);
+    treeLayout->setContentsMargins(0, 0, 0, 0);
+    auto *treeBar = new QHBoxLayout;
+    m_moreChildren = new QPushButton(treePanel);
+    m_previousChildren = new QPushButton(treePanel);
+    m_nextChildren = new QPushButton(treePanel);
+    m_cancelScan = new QPushButton(treePanel);
+    for (auto *button : {m_moreChildren, m_previousChildren, m_nextChildren, m_cancelScan})
+        treeBar->addWidget(button);
+    treeLayout->addLayout(treeBar);
+    m_treeModel = new LargeTreeModel(this);
+    m_tree = new QTreeView(treePanel);
+    m_tree->setObjectName("largeFileTree");
+    m_tree->setModel(m_treeModel);
+    m_tree->setUniformRowHeights(true);
+    m_tree->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_tree->setColumnWidth(0, 180);
+    m_tree->setColumnWidth(1, 80);
+    treeLayout->addWidget(m_tree);
+    m_treeStatus = new QLabel(treePanel);
+    m_treeStatus->setTextFormat(Qt::PlainText);
+    m_treeStatus->setWordWrap(true);
+    treeLayout->addWidget(m_treeStatus);
+    splitter->addWidget(treePanel);
+    splitter->setStretchFactor(0, 1);
+    splitter->setStretchFactor(1, 1);
+    layout->addWidget(splitter, 1);
+    connect(m_tree, &QTreeView::expanded, m_treeModel, &LargeTreeModel::requestMore);
+    connect(m_tree, &QTreeView::collapsed, m_treeModel, &LargeTreeModel::releaseChildren);
+    connect(m_treeModel, &LargeTreeModel::statusChanged, m_treeStatus, &QLabel::setText);
+    connect(m_treeModel, &LargeTreeModel::stateChanged, this, &LargeFileView::updateTreeControls);
+    connect(m_treeModel, &LargeTreeModel::batchLoaded, this, [this] {
+        if (!m_tree->currentIndex().isValid()) m_tree->setCurrentIndex(m_treeModel->index(0, 0));
+    });
+    connect(m_tree->selectionModel(), &QItemSelectionModel::currentChanged,
+            this, &LargeFileView::updateTreeControls);
+    connect(m_moreChildren, &QPushButton::clicked, this, [this] {
+        const auto container = activeContainer();
+        m_tree->expand(container);
+        m_treeModel->requestMore(container);
+    });
+    connect(m_cancelScan, &QPushButton::clicked, m_treeModel, &LargeTreeModel::cancel);
+    auto changeChildren = [this](bool next) {
+        const auto container = activeContainer();
+        m_tree->setCurrentIndex(container);
+        m_treeModel->changePage(container, next);
+    };
+    connect(m_previousChildren, &QPushButton::clicked, this, [changeChildren] { changeChildren(false); });
+    connect(m_nextChildren, &QPushButton::clicked, this, [changeChildren] { changeChildren(true); });
+    setupOperations(layout);
     m_status = new QLabel(this);
     m_status->setTextFormat(Qt::PlainText);
     m_status->setWordWrap(true);
@@ -110,13 +169,17 @@ LargeFileView::LargeFileView(QWidget *parent)
             int at = int(qMin(m_requestedOffset - page.start, qint64(utf8.size())));
             while (at > 0 && at < utf8.size() &&
                    (static_cast<unsigned char>(utf8[at]) & 0xC0) == 0x80) --at;
+            QString prefix = QString::fromUtf8(utf8.constData(), at);
+            // QTextDocument normalizes CRLF to one paragraph separator.
+            prefix.replace("\r\n", "\n").replace('\r', '\n');
             QTextCursor cursor(m_text->document());
-            cursor.setPosition(QString::fromUtf8(utf8.constData(), at).size());
+            cursor.setPosition(prefix.size());
             m_text->setTextCursor(cursor);
             m_text->ensureCursorVisible();
         }
-        m_offset->setText(QString::number(page.start));
+        m_offset->setText(QString::number(m_requestedOffset >= 0 ? m_requestedOffset : page.start));
         updateControls();
+        updateTaskControls();
         emit pageLoaded();
     });
     m_thread->start();
@@ -134,10 +197,16 @@ LargeFileView::~LargeFileView()
 
 void LargeFileView::openFile(const QString &path)
 {
+    m_tasks->cancel();
+    m_searchHasMore = false; m_searchNext = 0; m_searchQuery.clear();
+    m_matches->clear(); m_taskStatus->clear();
     m_path = path;
+    const QFileInfo info(path);
+    m_fileSize = info.size(); m_fileModified = info.lastModified();
     m_page = {};
     m_text->clear();
-    load(0);
+    load(0, true);
+    m_treeModel->openFile(path);
 }
 
 void LargeFileView::goToByte(qint64 offset)
@@ -147,18 +216,33 @@ void LargeFileView::goToByte(qint64 offset)
     m_requestedOffset = offset;
 }
 
-void LargeFileView::load(qint64 page)
+void LargeFileView::load(qint64 page, bool reopen)
 {
     m_loading = true;
     m_requestedOffset = -1;
     const quint64 request = ++*m_latest;
     updateControls();
-    emit requestPage(m_path, page, request);
+    updateTaskControls();
+    emit requestPage(m_path, page, request, reopen);
 }
 
 void LargeFileView::retranslate()
 {
-    m_notice->setText(caption("Large file · Read-only UTF-8 pages. JSON is not validated; tree, full-file search, editing and formatting are unavailable in this stage."));
+    m_notice->setText(caption("Large file · Read-only UTF-8. Search raw text; export or format to a separate file. Tree previews do not validate the whole document."));
+    m_query->setPlaceholderText(caption("Search raw text (case-sensitive)"));
+    m_search->setText(caption("Search File"));
+    m_searchMore->setText(caption("Continue Search"));
+    m_cancelTask->setText(caption("Cancel Task"));
+    m_locate->setText(caption("Locate Cursor in Tree"));
+    m_fileOperations->setText(caption("File Operations"));
+    m_formatFile->setText(caption("Format to File…"));
+    m_compactFile->setText(caption("Compress to File…"));
+    m_moreChildren->setText(caption("Load More"));
+    m_previousChildren->setText(caption("Previous Children"));
+    m_nextChildren->setText(caption("Next Children"));
+    m_cancelScan->setText(caption("Cancel Scan"));
+    m_treeModel->retranslate();
+    updateTreeControls();
     m_first->setText(caption("First"));
     m_previous->setText(caption("Previous"));
     m_next->setText(caption("Next"));
@@ -166,6 +250,25 @@ void LargeFileView::retranslate()
     m_jumpLabel->setText(caption("Byte offset (0-based):"));
     m_jump->setText(caption("Go"));
     updateControls();
+}
+
+QModelIndex LargeFileView::activeContainer() const
+{
+    auto index = m_tree->currentIndex().siblingAtColumn(0);
+    if (!index.isValid()) return m_treeModel->index(0, 0);
+    const auto *record = m_treeModel->record(index);
+    return record && record->container() ? index : index.parent();
+}
+
+void LargeFileView::updateTreeControls()
+{
+    const auto index = activeContainer();
+    const bool idle = !m_treeModel->busy();
+    m_moreChildren->setEnabled(idle && (!m_treeModel->rowCount() ||
+        m_treeModel->hasMore(index)));
+    m_previousChildren->setEnabled(idle && m_treeModel->firstRow(index) > 0);
+    m_nextChildren->setEnabled(m_treeModel->canNextPage(index));
+    m_cancelScan->setEnabled(!idle);
 }
 
 void LargeFileView::updateControls()
