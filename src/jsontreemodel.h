@@ -1,6 +1,8 @@
 #ifndef JSONTREEMODEL_H
 #define JSONTREEMODEL_H
 
+#include "editorlimits.h"
+
 #include "jsonindex.h"
 #include <QAbstractItemModel>
 #include <QAbstractTableModel>
@@ -33,7 +35,7 @@ public:
     int errorOffset() const { return m_index.errorOffset(); }
     QString errorMessage() const { return m_index.errorMessage(); }
     const QByteArray &source() const { return m_source; }
-    static QByteArray format(const QByteArray &validJson, bool pretty, int outputLimit = 8 * 1024 * 1024);
+    static QByteArray format(const QByteArray &validJson, bool pretty, int outputLimit = EditorLimits::CopyFormattedBytes);
     static QString quote(const QString &text);
     static QString unescape(const QString &text);
 private:

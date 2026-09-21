@@ -1,3 +1,4 @@
+#include "editorlimits.h"
 #include "jsontreemodel.h"
 #include <QCoreApplication>
 #include <QJsonArray>
@@ -241,7 +242,7 @@ QVector<uint32_t> JsonTreeModel::findNodes(const QString &query) const
 {
     QVector<uint32_t> result;
     if (!m_valid || query.isEmpty()) return result;
-    for (int i = 1; i < m_index.nodes().size() && result.size() < 5000; ++i) {
+    for (int i = 1; i < m_index.nodes().size() && result.size() < EditorLimits::SearchMatches; ++i) {
         QModelIndex idx = indexForId(uint32_t(i));
         if (key(idx).contains(query, Qt::CaseInsensitive) ||
             value(idx).contains(query, Qt::CaseInsensitive)) result.append(uint32_t(i));

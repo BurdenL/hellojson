@@ -19,25 +19,20 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 
 set(TS_FILES i18n/hellojson_zh_CN.ts i18n/hellojson_zh_TW.ts i18n/hellojson_en.ts)
 
-set(PROJECT_SOURCES
-        src/main.cpp
-        src/mainwindow.cpp
-        src/mainwindow.h
-        src/mainwindow.ui
-        src/jsontab.cpp
-        src/jsontab.h
-        src/jsonindex.cpp
-        src/jsonindex.h
-        src/jsontreemodel.cpp
-        src/jsontreemodel.h
-        src/jsondatasource.cpp src/jsondatasource.h
-        src/largefileview.cpp src/largefileview.h
-        src/largetreeindex.cpp src/largetreeindex.h
-        src/largetreemodel.cpp src/largetreemodel.h
-        src/largefiletasks.cpp src/largefiletasks.h src/largefileactions.cpp
-        src/jsonhighlighter.cpp
-        src/jsonhighlighter.h
-)
+# Shared implementation lists keep test and application builds in sync.
+set(EDITOR_SOURCES
+    src/jsontab.cpp src/jsontab.h src/jsontab_search.cpp src/jsontab_contextmenu.cpp
+    src/boundededitor.cpp src/boundededitor.h src/editorlimits.h src/uistrings.h
+    src/jsonindex.cpp src/jsonindex.h src/jsontreemodel.cpp src/jsontreemodel.h
+    src/jsondatasource.cpp src/jsondatasource.h
+    src/largefileview.cpp src/largefileview.h src/largefileactions.cpp
+    src/largetreeindex.cpp src/largetreeindex.h src/largetreemodel.cpp src/largetreemodel.h
+    src/largefiletasks.cpp src/largefiletasks.h src/jsonhighlighter.cpp src/jsonhighlighter.h)
+set(WINDOW_SOURCES
+    src/mainwindow.cpp src/mainwindow.h src/mainwindow.ui
+    src/mainwindow_actions.cpp src/mainwindow_dialogs.cpp src/mainwindow_documents.cpp
+    src/mainwindow_localization.cpp src/mainwindow_search.cpp)
+set(PROJECT_SOURCES src/main.cpp ${EDITOR_SOURCES} ${WINDOW_SOURCES})
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(hellojson
@@ -85,18 +80,8 @@ endif()
 include(CTest)
 if(BUILD_TESTING)
     find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Test)
-    add_executable(hellojson_tests
-        tests/tst_json.cpp tests/tst_json.h
-        src/jsonindex.cpp src/jsonindex.h
-        src/jsontreemodel.cpp src/jsontreemodel.h
-        src/jsondatasource.cpp src/jsondatasource.h
-        src/largefileview.cpp src/largefileview.h
-        src/largetreeindex.cpp src/largetreeindex.h
-        src/largetreemodel.cpp src/largetreemodel.h
-        src/largefiletasks.cpp src/largefiletasks.h src/largefileactions.cpp
-        src/jsontab.cpp src/jsontab.h
-        src/jsonhighlighter.cpp src/jsonhighlighter.h
-        src/mainwindow.cpp src/mainwindow.h src/mainwindow.ui)
+    add_executable(hellojson_tests tests/tst_json.cpp tests/tst_json.h
+        ${EDITOR_SOURCES} ${WINDOW_SOURCES})
     if(QT_VERSION_MAJOR EQUAL 6)
         qt_add_resources(hellojson_tests test_app_translations
             PREFIX "/i18n" BASE "${CMAKE_CURRENT_BINARY_DIR}" FILES ${QM_FILES})
@@ -106,18 +91,8 @@ if(BUILD_TESTING)
         endif()
     endif()
     target_include_directories(hellojson_tests PRIVATE src)
-    add_executable(hellojson_benchmark
-        tests/benchmark_largefile.cpp
-        tests/stress_largefile.cpp
-        src/jsondatasource.cpp src/jsondatasource.h
-        src/largefileview.cpp src/largefileview.h
-        src/largetreeindex.cpp src/largetreeindex.h
-        src/largetreemodel.cpp src/largetreemodel.h
-        src/largefiletasks.cpp src/largefiletasks.h src/largefileactions.cpp
-        src/jsonindex.cpp src/jsonindex.h
-        src/jsontreemodel.cpp src/jsontreemodel.h
-        src/jsontab.cpp src/jsontab.h
-        src/jsonhighlighter.cpp src/jsonhighlighter.h)
+    add_executable(hellojson_benchmark tests/benchmark_largefile.cpp tests/stress_largefile.cpp
+        ${EDITOR_SOURCES})
     target_include_directories(hellojson_benchmark PRIVATE src)
     target_link_libraries(hellojson_benchmark PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
     if(WIN32)

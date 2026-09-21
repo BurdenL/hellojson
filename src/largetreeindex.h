@@ -13,6 +13,7 @@ struct LargeTreeRecord
     enum Type { Object, Array, String, Number, Boolean, Null };
     Type type = Null;
     int depth = 0;
+    // UTF-8 文件字节范围 [start, end)，不是 QString 的字符索引。
     qint64 start = 0, end = 0, row = 0, keyStart = -1;
     QString key, preview; // bounded previews, never complete large values
     bool container() const { return type == Object || type == Array; }

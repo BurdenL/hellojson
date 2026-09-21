@@ -39,6 +39,7 @@ signals:
     void matches(quint64 generation, const QVector<qint64> &offsets);
     void progress(quint64 generation, qint64 position, qint64 total);
 private:
+    // UI 递增代次表示取消/替换；worker 持有共享计数，不访问已销毁的窗口。
     std::shared_ptr<std::atomic<quint64>> m_generation;
 };
 
@@ -61,7 +62,9 @@ signals:
     void progress(qint64 position, qint64 total);
     void busyChanged(bool busy);
 private:
+    // 不以界面为 parent：关闭后线程可能仍在结束一次读取，由 finished 触发释放。
     QThread *m_thread;
+    // UI 递增代次表示取消/替换；worker 持有共享计数，不访问已销毁的窗口。
     std::shared_ptr<std::atomic<quint64>> m_generation;
     bool m_busy = false;
 };

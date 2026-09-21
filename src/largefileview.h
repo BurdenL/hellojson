@@ -80,6 +80,7 @@ private:
     QPushButton *m_previousChildren;
     QPushButton *m_nextChildren;
     QPushButton *m_cancelScan;
+    // 不以界面为 parent：关闭后线程可能仍在结束一次读取，由 finished 触发释放。
     QThread *m_thread;
     std::shared_ptr<std::atomic<quint64>> m_latest;
     QString m_path;

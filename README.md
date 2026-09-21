@@ -108,3 +108,5 @@ This project is licensed under the **MIT License** — see [LICENSE](LICENSE).
 Qt is used under the **LGPL v3** — see [NOTICE](NOTICE) for third-party details.
 
 [发布保护与一键验收](docs/RELEASE_READINESS.md)
+
+[Code structure and reading guide](docs/CODE_STRUCTURE.md)

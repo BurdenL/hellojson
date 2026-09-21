@@ -45,6 +45,7 @@ signals:
     void statusChanged(const QString &text);
     void batchLoaded();
 private:
+    // 仅拥有当前窗口的节点；翻页/折叠可删除节点，旧 QModelIndex 随之失效。
     struct Node {
         LargeTreeRecord record;
         Node *parent = nullptr;
@@ -60,6 +61,7 @@ private:
     void submit(Node *node, bool root);
     void accept(const LargeTreeBatch &batch);
     QString m_path;
+    // 不以界面为 parent：关闭后线程可能仍在结束一次读取，由 finished 触发释放。
     QThread *m_thread;
     std::shared_ptr<std::atomic<quint64>> m_generation;
     std::unique_ptr<Node> m_root;

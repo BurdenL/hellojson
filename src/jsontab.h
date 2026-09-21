@@ -16,6 +16,8 @@ class QPushButton;
 class QStackedWidget;
 class LargeFileView;
 
+// 一个标签页在普通编辑器与只读大文件视图之间切换，两条数据路径不混用。
+// text()/saveFile() 不允许把大文件当前页误当成完整文档保存。
 class JsonTab : public QWidget
 {
     Q_OBJECT
@@ -26,6 +28,7 @@ public:
     bool openFile(const QString &path, OpenMode mode, QString *error);
     bool isLargeFile() const { return m_largeFileView != nullptr; }
     QString filePath() const { return m_filePath; }
+    // 修改状态由 QTextDocument 撤销栈维护，与 JSON 是否有效无关。
     bool isModified() const;
     bool saveFile(const QString &path, QString *error);
     QByteArray viewState() const;
@@ -38,6 +41,7 @@ public:
     void formatJson(bool compressed);
     void clear();
 
+    // 仅表示当前文本已有有效索引；任何编辑都会使该索引失效。
     bool hasDocument() const { return m_hasValidDocument; }
     QString parseError() const;
     void refreshLanguage();

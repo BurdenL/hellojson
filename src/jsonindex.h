@@ -26,6 +26,7 @@ struct IndexNode {
 
 /// Streaming JSON scanner — builds a flat IndexNode tree in O(n) time
 /// without constructing a DOM.
+// 普通模式的连续索引：节点只存原始 UTF-8 的偏移，源数据必须保持不变。
 class JsonIndex
 {
 public:

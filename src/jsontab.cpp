@@ -1,4 +1,6 @@
 #include "jsontab.h"
+#include "editorlimits.h"
+#include "uistrings.h"
 #include "boundededitor.h"
 #include <QSaveFile>
 #include "jsonhighlighter.h"
@@ -6,13 +8,11 @@
 #include "largefileview.h"
 
 #include <QApplication>
-#include <QClipboard>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QItemSelectionModel>
 #include <QLabel>
-#include <QMenu>
 #include <QSignalBlocker>
 #include <QEvent>
 #include <QPlainTextEdit>
@@ -20,16 +20,9 @@
 #include <QSplitter>
 #include <QTreeView>
 #include <QTableView>
-#include <QScrollBar>
 #include <QStackedWidget>
 #include <QFileInfo>
 #include <QVBoxLayout>
-
-// Helper: translate using the MainWindow context so existing .ts entries work
-static inline QString trMain(const char *source, const char *comment = nullptr)
-{
-    return QApplication::translate("MainWindow", source, comment);
-}
 
 JsonTab::JsonTab(QWidget *parent)
     : QWidget(parent)
@@ -251,7 +244,6 @@ void JsonTab::clear()
     setTreeVisible(false);
 }
 
-// ── Tree visibility ──────────────────────────────────────────────────────
 
 void JsonTab::setTreeVisible(bool visible)
 {
@@ -313,7 +305,7 @@ void JsonTab::formatJson(bool compressed)
         emit searchResultsChanged();
         return;
     }
-    const QByteArray formatted = JsonTreeModel::format(input, !compressed, BoundedEditor::CharacterLimit);
+    const QByteArray formatted = JsonTreeModel::format(input, !compressed, EditorLimits::FormattedBytes);
     if (formatted.isEmpty() && !input.isEmpty()) {
         m_model->clear();
         m_operationError = trMain("Formatted output exceeds the editing limit. Use large-file mode to format to a file.");
@@ -392,227 +384,6 @@ void JsonTab::removeBackslashes()
     emit searchResultsChanged();
 }
 
-void JsonTab::setNodeSearch(bool enabled)
-{
-    clearFind();
-    m_nodeSearch = enabled;
-}
-void JsonTab::selectNodeMatch(int position)
-{
-    if (position < 0 || position >= m_nodeMatches.size()) return;
-    m_currentNodeMatch = position;
-    auto idx = m_model->indexForId(m_nodeMatches[position]);
-    setTreeVisible(true);
-    for (auto parent = idx.parent(); parent.isValid(); parent = parent.parent())
-        m_treeView->expand(parent);
-    m_treeView->setCurrentIndex(idx);
-    m_treeView->scrollTo(idx);
-    showNode(idx);
-}
-
-void JsonTab::showNode(const QModelIndex &idx)
-{
-    const auto *n = m_model->node(idx);
-    if (!n) return;
-    QTextCursor cursor(m_inputEdit->document());
-    const auto &source = m_model->source();
-    const int start = QString::fromUtf8(source.constData(), int(n->valueOffset)).size();
-    const int length = QString::fromUtf8(source.constData() + n->valueOffset, int(n->valueLen)).size();
-    cursor.setPosition(start);
-    cursor.setPosition(start + length, QTextCursor::KeepAnchor);
-    m_inputEdit->setTextCursor(cursor);
-    m_inputEdit->ensureCursorVisible();
-}
-
-// ── Tree helpers ─────────────────────────────────────────────────────────
-
-void JsonTab::expandAll()
-{
-    m_treeView->expandAll();
-}
-
-void JsonTab::collapseAll()
-{
-    m_treeView->collapseAll();
-}
-
-// ── Search ───────────────────────────────────────────────────────────────
-
-void JsonTab::findText(const QString &text)
-{
-    if (isLargeFile()) return;
-    m_searchLimited = false;
-    m_searchText = text;
-    clearFind();
-    if (text.isEmpty()) return;
-    if (m_nodeSearch) {
-        if (!m_hasValidDocument) {
-            m_hasValidDocument = m_model->setJson(this->text().toUtf8());
-            if (!m_hasValidDocument) return;
-        }
-        m_nodeMatches = m_model->findNodes(text);
-        m_searchLimited = m_nodeMatches.size() >= 5000;
-        selectNodeMatch(0);
-        return;
-    }
-
-    QTextDocument *doc = m_inputEdit->document();
-    QTextCursor cursor(doc);
-
-    QTextCharFormat highlightFmt;
-    highlightFmt.setBackground(QColor(255, 255, 0));    // yellow
-    highlightFmt.setForeground(Qt::black);
-
-    QTextCharFormat activeFmt;
-    activeFmt.setBackground(QColor(255, 165, 0));       // orange
-
-    while (true) {
-        cursor = doc->find(text, cursor);
-        if (cursor.isNull()) break;
-        if (m_matchPositions.size() >= 5000) { m_searchLimited = true; break; }
-        m_matchPositions.append(cursor);
-    }
-
-    // Apply highlights
-    QList<QTextEdit::ExtraSelection> extras;
-    for (int i = 0; i < m_matchPositions.size(); ++i) {
-        QTextEdit::ExtraSelection sel;
-        sel.cursor = m_matchPositions[i];
-        sel.format = (i == 0) ? activeFmt : highlightFmt;
-        extras.append(sel);
-    }
-    m_inputEdit->setExtraSelections(extras);
-
-    // Jump to first match
-    if (!m_matchPositions.isEmpty()) {
-        m_currentMatch = 0;
-        m_inputEdit->setTextCursor(m_matchPositions[0]);
-        m_inputEdit->ensureCursorVisible();
-    }
-}
-
-bool JsonTab::findNext(const QString &text)
-{
-    if (isLargeFile()) return false;
-    if (m_nodeSearch) {
-        if (m_nodeMatches.isEmpty()) findText(text);
-        else selectNodeMatch((m_currentNodeMatch + 1) % m_nodeMatches.size());
-        return !m_nodeMatches.isEmpty();
-    }
-    if (m_matchPositions.isEmpty()) {
-        findText(text);
-        return !m_matchPositions.isEmpty();
-    }
-
-    int prev = m_currentMatch;
-    m_currentMatch = (m_currentMatch + 1) % m_matchPositions.size();
-
-    // Update highlight: prev → yellow, current → orange
-    QList<QTextEdit::ExtraSelection> extras = m_inputEdit->extraSelections();
-    if (prev >= 0 && prev < extras.size())
-        extras[prev].format.setBackground(QColor(255, 255, 0));
-    if (m_currentMatch >= 0 && m_currentMatch < extras.size())
-        extras[m_currentMatch].format.setBackground(QColor(255, 165, 0));
-    m_inputEdit->setExtraSelections(extras);
-
-    m_inputEdit->setTextCursor(m_matchPositions[m_currentMatch]);
-    m_inputEdit->ensureCursorVisible();
-    return true;
-}
-
-bool JsonTab::findPrev(const QString &text)
-{
-    if (isLargeFile()) return false;
-    if (m_nodeSearch) {
-        if (m_nodeMatches.isEmpty()) findText(text);
-        else selectNodeMatch((m_currentNodeMatch - 1 + m_nodeMatches.size()) % m_nodeMatches.size());
-        return !m_nodeMatches.isEmpty();
-    }
-    if (m_matchPositions.isEmpty()) {
-        findText(text);
-        return !m_matchPositions.isEmpty();
-    }
-
-    int prev = m_currentMatch;
-    m_currentMatch = (m_currentMatch - 1 + m_matchPositions.size()) % m_matchPositions.size();
-
-    QList<QTextEdit::ExtraSelection> extras = m_inputEdit->extraSelections();
-    if (prev >= 0 && prev < extras.size())
-        extras[prev].format.setBackground(QColor(255, 255, 0));
-    if (m_currentMatch >= 0 && m_currentMatch < extras.size())
-        extras[m_currentMatch].format.setBackground(QColor(255, 165, 0));
-    m_inputEdit->setExtraSelections(extras);
-
-    m_inputEdit->setTextCursor(m_matchPositions[m_currentMatch]);
-    m_inputEdit->ensureCursorVisible();
-    return true;
-}
-
-void JsonTab::clearFind()
-{
-    m_nodeMatches.clear();
-    m_currentNodeMatch = -1;
-    m_matchPositions.clear();
-    m_currentMatch = -1;
-    m_inputEdit->setExtraSelections({});
-}
-
-// ── Tree context menu ────────────────────────────────────────────────────
-
-
-void JsonTab::onTreeContextMenu(const QPoint &pos)
-{
-    showContextMenu(m_treeView->indexAt(pos), m_treeView->viewport()->mapToGlobal(pos));
-}
-
-void JsonTab::showContextMenu(const QModelIndex &idx, const QPoint &globalPos)
-{
-    if (!idx.isValid()) return;
-    QMenu menu(this);
-    const QStringList labels = {
-        trMain("Copy Value"), trMain("Copy Key"), trMain("Copy Path"),
-        trMain("Copy Key / Value"), trMain("Copy Node JSON"), trMain("Copy Similar Values"),
-        trMain("Copy MAP Entry"), trMain("Copy Formatted Node JSON")
-    };
-    QList<QAction *> actions;
-    for (const auto &label : labels) actions.append(menu.addAction(label));
-    menu.addSeparator();
-    auto *locate = menu.addAction(trMain("Locate in Text"));
-    auto *expand = menu.addAction(trMain("Expand Subtree"));
-    auto *collapse = menu.addAction(trMain("Collapse Subtree"));
-    QAction *chosen = menu.exec(globalPos);
-    if (!chosen) return;
-    if (chosen == locate) { showNode(idx); return; }
-    const auto root = idx.sibling(idx.row(), 0);
-    if (chosen == expand) { m_treeView->expandRecursively(root); return; }
-    if (chosen == collapse) {
-        QList<QModelIndex> pending{root};
-        while (!pending.isEmpty()) {
-            auto current = pending.takeLast();
-            if (!m_treeView->isExpanded(current)) continue;
-            m_treeView->collapse(current);
-            for (int r = 0; r < m_model->rowCount(current); ++r)
-                pending.append(m_model->index(r, 0, current));
-        }
-        return;
-    }
-    QString result;
-    switch (actions.indexOf(chosen)) {
-    case 0:
-        result = m_model->node(idx)->isContainer()
-            ? QString::fromUtf8(m_model->json(idx)) : m_model->value(idx); break;
-    case 1: result = m_model->key(idx); break;
-    case 2: result = m_model->path(idx); break;
-    case 3: result = JsonTreeModel::quote(m_model->key(idx)) + ": " + QString::fromUtf8(m_model->json(idx)); break;
-    case 4: result = QString::fromUtf8(m_model->json(idx)); break;
-    case 5: result = m_model->similarValues(idx); break;
-    case 6: result = JsonTreeModel::quote(m_model->key(idx)) + "," + JsonTreeModel::quote(m_model->value(idx)); break;
-    case 7: result = QString::fromUtf8(m_model->json(idx, true)); break;
-    default: return;
-    }
-    QApplication::clipboard()->setText(result);
-}
-
 bool JsonTab::isModified() const
 {
     return !isLargeFile() && m_inputEdit->document()->isModified();
@@ -622,6 +393,7 @@ bool JsonTab::saveFile(const QString &path, QString *error)
 {
     if (error) error->clear();
     if (isLargeFile()) { if (error) *error = trMain("Large-file mode is read-only."); return false; }
+    // 不退回直接写入：提交前的失败必须保留已有目标文件。
     QSaveFile output(path);
     output.setDirectWriteFallback(false);
     const QByteArray bytes = text().toUtf8();
@@ -629,13 +401,20 @@ bool JsonTab::saveFile(const QString &path, QString *error)
         if (error) *error = output.errorString();
         return false;
     }
+    // 只有 commit 成功才能更新文件关联，并将当前撤销位置标为已保存。
     m_filePath = QFileInfo(path).absoluteFilePath();
     m_inputEdit->document()->setModified(false);
     emit contentChanged();
     return true;
 }
 
-QByteArray JsonTab::viewState() const { return !isTreeVisible() && !m_savedTreeState.isEmpty() ? m_savedTreeState : m_splitter->saveState(); }
-void JsonTab::restoreViewState(const QByteArray &state) {
+QByteArray JsonTab::viewState() const
+{
+    // 隐藏树后 splitter 的即时尺寸不再代表用户最后设置的分栏比例。
+    if (!isTreeVisible() && !m_savedTreeState.isEmpty()) return m_savedTreeState;
+    return m_splitter->saveState();
+}
+void JsonTab::restoreViewState(const QByteArray &state)
+{
     if (!state.isEmpty() && m_splitter->restoreState(state)) m_savedTreeState = state;
 }

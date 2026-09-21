@@ -17,6 +17,8 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
+// 窗口协调层：路由操作与用户确认，不负责 JSON 解析或后台文件扫描。
+// 实现按 actions / documents / localization / search / dialogs 拆分。
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -59,10 +61,11 @@ private slots:
     void onFindClose();
 
 private:
+    // 文件生命周期：保存失败与取消都通过 false 传回关闭流程。
     bool saveTab(JsonTab *tab, bool saveAs = false);
     bool confirmDiscard(JsonTab *tab);
     void persistSettings();
-    QString m_lastDirectory;
+    // 标签页由 Qt 父子关系管理，currentTab 返回非拥有指针。
     JsonTab *currentTab() const;
     JsonTab *createTab(const QString &title, bool defaultTitle = false);
     void ensurePlusTab();
@@ -72,17 +75,19 @@ private:
     void updateTabStates();
     void showFindBar(bool visible);
     void performSearch();
-    void setupHiJsonActions();
+    void setupActions();
     void setupMenuLayout();
     void refreshDynamicTexts();
     void updateSearchCount();
     void showUnicodeConverter();
+    void formatCurrentDocument(bool compressed);
     void openFileWithMode(bool largeFile);
 
     Ui::MainWindow *ui;
     QTranslator *m_translator = nullptr;
     QTranslator *m_qtTranslator = nullptr;
     QString m_currentLocale;
+    QString m_lastDirectory;
 
     // Toggle tree button
     QPushButton *m_toggleTreeBtn = nullptr;
