@@ -13,6 +13,9 @@
 
 void MainWindow::setupActions()
 {
+    // Explicit roles keep macOS application-menu placement stable across languages.
+    ui->actionAbout->setMenuRole(QAction::AboutRole);
+    ui->actionExit->setMenuRole(QAction::QuitRole);
     auto *saveAs = new QAction(tr("Save As..."), this);
     saveAs->setObjectName("actionSaveAs");
     saveAs->setProperty("translationSource", "Save As...");

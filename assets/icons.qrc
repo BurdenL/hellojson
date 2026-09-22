@@ -1,0 +1,15 @@
+<RCC>
+ <qresource prefix="/icons">
+  <file alias="hellojson-16.png">icons/hellojson-16.png</file>
+  <file alias="hellojson-20.png">icons/hellojson-20.png</file>
+  <file alias="hellojson-24.png">icons/hellojson-24.png</file>
+  <file alias="hellojson-32.png">icons/hellojson-32.png</file>
+  <file alias="hellojson-40.png">icons/hellojson-40.png</file>
+  <file alias="hellojson-48.png">icons/hellojson-48.png</file>
+  <file alias="hellojson-64.png">icons/hellojson-64.png</file>
+  <file alias="hellojson-128.png">icons/hellojson-128.png</file>
+  <file alias="hellojson-256.png">icons/hellojson-256.png</file>
+  <file alias="hellojson-512.png">icons/hellojson-512.png</file>
+  <file alias="hellojson-1024.png">icons/hellojson-1024.png</file>
+ </qresource>
+</RCC>

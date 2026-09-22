@@ -106,3 +106,7 @@ Qt 基于 **LGPL v3** 使用 — 第三方声明详见 [NOTICE](NOTICE)。
 [发布保护与一键验收](docs/RELEASE_READINESS.md)
 
 [代码结构与阅读指南](docs/CODE_STRUCTURE.md)
+
+[跟着源码学习 Qt：阅读路线、原理与练习](docs/QT_SOURCE_LEARNING.md)
+
+[macOS / Linux 初步支持与构建说明](docs/CROSS_PLATFORM.md)

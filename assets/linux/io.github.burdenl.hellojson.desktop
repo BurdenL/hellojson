@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=HelloJson
+Comment=View and edit JSON files
+Comment[zh_CN]=查看和编辑 JSON 文件
+Comment[zh_TW]=檢視和編輯 JSON 檔案
+Exec=hellojson
+Icon=hellojson
+Terminal=false
+Categories=Development;Utility;
+StartupNotify=true

@@ -1,5 +1,7 @@
 # 代码阅读指南
 
+如果你希望通过本项目学习 Qt，请先读 [跟着 HelloJson 源码学习 Qt](QT_SOURCE_LEARNING.md)，再用本文查找文件职责。
+
 本次整理保持现有交互、保存格式、翻译上下文和容量限制不变。
 拆分后的 mainwindow_*.cpp 仍实现同一个 MainWindow，jsontab_*.cpp 仍实现同一个 JsonTab。
 它们是按职责组织的编译单元，没有额外控制器实例或重复状态。
